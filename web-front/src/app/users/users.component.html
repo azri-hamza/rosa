@@ -1,5 +1,17 @@
-@for (user of users(); track $index) {
-<div class="user-card">
-  <h2>{{ user.name }}</h2>
+<div class="users-container">
+  <h1>Users List</h1>
+  
+  @if (usersStore.loading()) {
+    <div class="loading">Loading users...</div>
+  } @else {
+    <div class="users-grid">
+      @for (user of users(); track user.id) {
+        <div class="user-card">
+          <p class="user-id">ID: {{ user.id }}</p>
+          <h2 class="user-name">{{ user.name }}</h2>
+          <p class="user-email">{{ user.email }}</p>
+        </div>
+      }
+    </div>
+  }
 </div>
-}
