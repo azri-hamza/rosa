@@ -1,0 +1,52 @@
+<nz-layout>
+  <nz-header>
+    <div class="logo"></div>
+    <ul nz-menu nzTheme="dark" nzMode="horizontal" class="header-menu">
+      <li nz-menu-item nzSelected>nav 1</li>
+      <li nz-menu-item>nav 2</li>
+      <li nz-menu-item>nav 3</li>
+    </ul>
+  </nz-header>
+  <nz-layout>
+    <nz-sider nzWidth="200px" nzTheme="light">
+      <ul nz-menu nzMode="inline" class="sider-menu">
+        <li nz-menu-item nzSelected>
+          <span nz-icon nzType="pie-chart" nzTheme="outline"></span>
+          <span><a routerLink="/dashboard"> dashboard </a></span>
+        </li>
+        <li nz-submenu nzTitle="Ventes" nzIcon="user">
+          <ul>
+            <li nz-menu-item><a routerLink="/quote"> Devis </a></li>
+            <li nz-menu-item>Bon livraison</li>
+            <li nz-menu-item>Facture</li>
+          </ul>
+        </li>
+        <li nz-submenu nzTitle="Achats" nzIcon="laptop">
+          <ul>
+            <li nz-menu-item>Bon de réception</li>
+            <li nz-menu-item>Facture</li>
+          </ul>
+        </li>
+        <li nz-submenu nzTitle="Stock" nzIcon="notification">
+          <ul>
+            <li nz-menu-item>Bon d'entrée</li>
+            <li nz-menu-item>Bon de sortie</li>
+          </ul>
+        </li>
+        <li nz-submenu nzTitle="Users" nzIcon="user">
+          <ul>
+            <li nz-menu-item><a routerLink="/users"> Users </a></li>
+          </ul>
+        </li>
+      </ul>
+    </nz-sider>
+    <nz-layout class="inner-layout">
+      <nz-breadcrumb>
+        <nz-breadcrumb-item>Ventes</nz-breadcrumb-item>
+        <nz-breadcrumb-item>Bon de livraison</nz-breadcrumb-item>
+        <nz-breadcrumb-item>BL #1</nz-breadcrumb-item>
+      </nz-breadcrumb>
+      <nz-content> <router-outlet></router-outlet> </nz-content>
+    </nz-layout>
+  </nz-layout>
+</nz-layout>

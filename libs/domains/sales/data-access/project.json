@@ -1,0 +1,20 @@
+{
+  "name": "sales-data-access",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/domains/sales/data-access/src",
+  "prefix": "lib",
+  "projectType": "library",
+  "tags": ["type:data-access", "scope:sales"],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "libs/domains/sales/data-access/jest.config.ts"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

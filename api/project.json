@@ -1,0 +1,87 @@
+{
+  "name": "api",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "api/src",
+  "projectType": "application",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/esbuild:esbuild",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/api",
+        "main": "api/src/main.ts",
+        "tsConfig": "api/tsconfig.app.json",
+        "bundle": true,
+        "platform": "node",
+        "target": "es2022",
+        "format": ["cjs"],
+        "external": ["pg-native", "pg-query-stream", "typeorm"]
+      },
+      "configurations": {
+        "development": {},
+        "dev": {
+          "optimization": false,
+          "extractLicenses": false,
+          "inspect": true
+        },
+        "staging": {
+          "optimization": true,
+          "extractLicenses": true,
+          "inspect": false
+        },
+        "prod": {
+          "optimization": true,
+          "extractLicenses": true,
+          "inspect": false
+        },
+        "production": {
+          "optimization": true,
+          "extractLicenses": true,
+          "inspect": false
+        }
+      }
+    },
+    "serve": {
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "api:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "api:build:development"
+        },
+        "dev": {
+          "buildTarget": "api:build:dev"
+        },
+        "staging": {
+          "buildTarget": "api:build:staging"
+        },
+        "prod": {
+          "buildTarget": "api:build:prod"
+        },
+        "production": {
+          "buildTarget": "api:build:production"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/api"],
+      "options": {
+        "jestConfig": "api/jest.config.ts"
+      }
+    },
+    "serve:with-db": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker compose -f docker-compose.postgres.yml up -d postgres && pnpm nx run api:serve"
+      }
+    }
+  },
+  "implicitDependencies": ["api-core"]
+}

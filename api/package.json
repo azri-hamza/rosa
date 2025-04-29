@@ -1,0 +1,14 @@
+{
+  "name": "api",
+  "version": "1.0.0",
+  "dependencies": {
+    "@nestjs/config": "^4.0.2",
+    "@nestjs/typeorm": "^11.0.0",
+    "dotenv": "^16.5.0",
+    "pg": "^8.14.1",
+    "typeorm": "^0.3.22"
+  },
+  "devDependencies": {
+    "@types/dotenv": "^8.2.3"
+  }
+}

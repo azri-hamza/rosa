@@ -1,0 +1,23 @@
+# Ignore dependency and build artifacts
+node_modules
+dist
+.pnpm
+.pnp*
+.nx
+coverage
+build
+tmp
+
+# Ignore system/editor files
+.DS_Store
+.vscode
+.idea
+
+# Ignore lockfiles if you're regenerating inside Docker
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
+
+# Ignore Git
+.git
+.gitignore

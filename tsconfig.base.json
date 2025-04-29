@@ -1,21 +1,31 @@
 {
+  "compileOnSave": false,
   "compilerOptions": {
-    "composite": true,
-    "declarationMap": true,
-    "emitDeclarationOnly": true,
+    "baseUrl": ".",
+    "paths": {
+      "@rosa/api-client": ["libs/shared/api-client/src/index.ts"],
+      "@rosa/api-core": ["libs/shared/api-core/src/index.ts"],
+      "@rosa/old-data-access": ["libs/old-data-access/src/index.ts"],
+      "@rosa/sales/data-access": [
+        "libs/domains/sales/data-access/src/index.ts"
+      ],
+      "@rosa/types": ["libs/shared/types/src/index.ts"],
+      "@rosa/web-front": ["web-front/src/*"]
+    },
+    "rootDir": ".",
+    "target": "es2022",
+    "module": "es2022",
+    "lib": ["es2022", "dom"],
+    "moduleResolution": "node",
     "importHelpers": true,
-    "isolatedModules": true,
-    "lib": ["es2022"],
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
-    "noEmitOnError": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "skipLibCheck": true,
+    "strict": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": true,
     "noImplicitReturns": true,
     "noUnusedLocals": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "target": "es2022",
-    "customConditions": ["development"]
+    "types": ["node"]
   }
 }

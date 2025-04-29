@@ -1,0 +1,10 @@
+{
+  "files.watcherExclude": {
+    "**/.nx/cache/**": true,
+    "**/dist/**": true,
+    "**/node_modules/*/**": true
+  },
+  "cSpell.words": ["sider"],
+  "cSpell.language": "en,fr-FR",
+  "cSpell.languageSettings": []
+}
