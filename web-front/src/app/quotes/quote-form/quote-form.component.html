@@ -1,0 +1,98 @@
+<form nz-form [formGroup]="quoteForm" (ngSubmit)="onSubmit()">
+  <nz-form-item>
+    <nz-form-label [nzSpan]="6" nzFor="year">Year</nz-form-label>
+    <nz-form-control [nzSpan]="14">
+      <nz-input-number
+        id="year"
+        formControlName="year"
+        [nzMin]="2000"
+        [nzMax]="2100"
+      ></nz-input-number>
+    </nz-form-control>
+  </nz-form-item>
+
+  <div class="items-section">
+    <div class="items-header">
+      <h3>Quote Items</h3>
+      <button nz-button nzType="default" (click)="addItem()">Add Item</button>
+    </div>
+
+    <div formArrayName="items">
+      @for (item of items.controls; track $index) {
+      <div [formGroupName]="$index" class="item-form">
+        <nz-form-item>
+          <nz-form-label>Product ID</nz-form-label>
+          <nz-form-control nzErrorTip="Please input product ID">
+            <input
+              nz-input
+              formControlName="productId"
+              placeholder="Product ID"
+            />
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item>
+          <nz-form-label>Product Name</nz-form-label>
+          <nz-form-control nzErrorTip="Please input product name">
+            <input
+              nz-input
+              formControlName="productName"
+              placeholder="Product Name"
+            />
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item>
+          <nz-form-label>Quantity</nz-form-label>
+          <nz-form-control nzErrorTip="Please input quantity">
+            <nz-input-number
+              formControlName="quantity"
+              [nzMin]="1"
+              [nzStep]="1"
+            />
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item>
+          <nz-form-label>Unit Price</nz-form-label>
+          <nz-form-control nzErrorTip="Please input unit price">
+            <nz-input-number
+              formControlName="unitPrice"
+              [nzMin]="0"
+              [nzStep]="0.01"
+              [nzPrecision]="2"
+            />
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item>
+          <nz-form-label>Total</nz-form-label>
+          <nz-form-control>
+            <nz-input-number
+              formControlName="totalPrice"
+              [nzDisabled]="true"
+              [nzPrecision]="2"
+            />
+          </nz-form-control>
+        </nz-form-item>
+
+        <button nz-button nzType="text" nzDanger (click)="removeItem($index)">
+          <span nz-icon nzType="delete"></span>
+        </button>
+      </div>
+      }
+    </div>
+  </div>
+
+  <div class="form-footer">
+    <button nz-button nzType="default" (click)="cancel()">Cancel</button>
+    <button
+      nz-button
+      nzType="primary"
+      type="submit"
+      [disabled]="!quoteForm.valid || items.length === 0"
+    >
+      Save
+    </button>
+  </div>
+</form>

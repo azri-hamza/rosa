@@ -11,6 +11,8 @@ import {
   NotificationOutline,
   UserOutline,
   PieChartOutline,
+  PlusOutline,
+  EyeOutline,
 } from '@ant-design/icons-angular/icons';
 import { NZ_ICONS } from 'ng-zorro-antd/icon';
 import { ApiClient, API_ENVIRONMENT } from '@rosa/api-client';
@@ -23,6 +25,8 @@ const icons = [
   NotificationOutline,
   UserOutline,
   PieChartOutline,
+  PlusOutline,
+  EyeOutline,
 ];
 
 export const appConfig: ApplicationConfig = {

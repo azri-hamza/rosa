@@ -7,9 +7,16 @@ export const appRoutes: Route[] = [
       import('./home/home.component').then((m) => m.HomeComponent),
   },
   {
-    path: 'quote',
+    path: 'quotes',
     loadComponent: () =>
-      import('./quote/quote.component').then((m) => m.QuoteComponent),
+      import('./quotes/quotes.component').then((m) => m.QuotesComponent),
+  },
+  {
+    path: 'quotes/:id',
+    loadComponent: () =>
+      import('./quotes/quote-details/quote-details.component').then(
+        (m) => m.QuoteDetailsComponent
+      ),
   },
   {
     path: 'users',

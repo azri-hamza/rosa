@@ -3,7 +3,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from '../app/user/user.module';
 import { SalesModule } from './sales/sales.module';
-import { User, Quote } from '@rosa/api-core';
+import { ProductModule } from './product/product.module';
+import { User, Quote, QuoteItem, Product } from '@rosa/api-core';
+import { join } from 'path';
 
 @Module({
   imports: [
@@ -17,12 +19,15 @@ import { User, Quote } from '@rosa/api-core';
         username: config.get<string>('DATABASE_USER'),
         password: config.get<string>('DATABASE_PASSWORD'),
         database: config.get<string>('DATABASE_NAME'),
-        entities: [User, Quote],
+        entities: [User, Quote, QuoteItem, Product],
         synchronize: true,
+        migrationsRun: true,
+        migrations: [join(__dirname, '../migrations/*.{ts,js}')],
       }),
     }),
     UserModule,
     SalesModule,
+    ProductModule,
   ],
 })
 export class AppModule {}

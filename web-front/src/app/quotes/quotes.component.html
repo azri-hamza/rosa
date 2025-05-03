@@ -1,0 +1,41 @@
+<div class="quotes-container">
+  <div class="header">
+    <h2>Bons de livraison</h2>
+    <button nz-button nzType="primary" (click)="openQuoteForm()">
+      <nz-icon nzType="plus" nzTheme="outline" />
+      Nouvelle livraison
+    </button>
+  </div>
+
+  <nz-table
+    #quotesTable
+    [nzData]="quotes()"
+    [nzLoading]="loading()"
+    [nzBordered]="true"
+  >
+    <thead>
+      <tr>
+        <th>Year</th>
+        <th>Sequence #</th>
+        <th>Created At</th>
+        <th>Items</th>
+        <th>Total Amount</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let quote of quotesTable.data">
+        <td>{{ quote.year || 'N/A' }}</td>
+        <td>#{{ quote.sequenceNumber }}</td>
+        <td>{{ quote.createdAt | date }}</td>
+        <td>{{ quote.itemCount }}</td>
+        <td>{{ quote.totalAmount | currency }}</td>
+        <td>
+          <a [routerLink]="['/quotes', quote.id]" nz-button nzType="link">
+            View Details
+          </a>
+        </td>
+      </tr>
+    </tbody>
+  </nz-table>
+</div>
