@@ -20,6 +20,18 @@ export class ApiClient {
     return this.http.post<T>(this.buildUrl(endpoint), body, options);
   }
 
+  put<T>(endpoint: string, body: unknown, options?: HttpOptions) {
+    return this.http.put<T>(this.buildUrl(endpoint), body, options);
+  }
+
+  delete<T>(endpoint: string, options?: HttpOptions) {
+    return this.http.delete<T>(this.buildUrl(endpoint), options);
+  }
+
+  patch<T>(endpoint: string, body: unknown, options?: HttpOptions) {
+    return this.http.patch<T>(this.buildUrl(endpoint), body, options);
+  }
+
   private buildUrl(endpoint: string): string {
     return `${this.environment.apiUrl}/${endpoint}`;
   }

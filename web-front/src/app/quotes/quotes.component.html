@@ -1,11 +1,16 @@
 <div class="quotes-container">
   <div class="header">
-    <h2>Bons de livraison</h2>
+    <h2>Devis</h2>
     <button nz-button nzType="primary" (click)="openQuoteForm()">
       <nz-icon nzType="plus" nzTheme="outline" />
-      Nouvelle livraison
+      Nouveau Devis
     </button>
   </div>
+
+  <app-quotes-filter
+    [initialFilters]="filters()"
+    (filtersChange)="onFiltersChange($event)"
+  ></app-quotes-filter>
 
   <nz-table
     #quotesTable
@@ -17,7 +22,9 @@
       <tr>
         <th>Year</th>
         <th>Sequence #</th>
+        <th>Client</th>
         <th>Created At</th>
+        <th>Custom Date</th>
         <th>Items</th>
         <th>Total Amount</th>
         <th>Actions</th>
@@ -27,13 +34,21 @@
       <tr *ngFor="let quote of quotesTable.data">
         <td>{{ quote.year || 'N/A' }}</td>
         <td>#{{ quote.sequenceNumber }}</td>
+        <td>{{ quote.client?.name || 'No Client' }}</td>
         <td>{{ quote.createdAt | date }}</td>
+        <td>{{ quote.userDate ? (quote.userDate | date) : 'Not set' }}</td>
         <td>{{ quote.itemCount }}</td>
         <td>{{ quote.totalAmount | currency }}</td>
-        <td>
-          <a [routerLink]="['/quotes', quote.id]" nz-button nzType="link">
-            View Details
+        <td class="action-buttons">
+          <a [routerLink]="['/quotes', quote.referenceId]" nz-button nzType="link">
+            <nz-icon nzType="eye"></nz-icon>
           </a>
+          <button nz-button nzType="link" (click)="editQuote(quote)">
+            <nz-icon nzType="edit"></nz-icon>
+          </button>
+          <button nz-button nzType="link" nzDanger (click)="deleteQuote(quote)">
+            <nz-icon nzType="delete"></nz-icon>
+          </button>
         </td>
       </tr>
     </tbody>

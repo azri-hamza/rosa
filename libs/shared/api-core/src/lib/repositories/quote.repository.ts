@@ -6,10 +6,10 @@ export class QuoteRepository extends Repository<Quote> {
     super(Quote, dataSource.createEntityManager());
   }
 
-  async findById(id: string): Promise<Quote> {
+  async findById(id: number): Promise<Quote> {
     const quote = await this.findOne({
       where: { id },
-      relations: ['items'],
+      relations: ['items', 'client'],
     });
     if (!quote) {
       throw new Error(`Quote with ID ${id} not found`);
@@ -17,9 +17,22 @@ export class QuoteRepository extends Repository<Quote> {
     return quote;
   }
 
+  
+
+  async findByReferenceId(referenceId: string): Promise<Quote> {
+    const quote = await this.findOne({
+      where: { referenceId },
+      relations: ['items', 'client'],
+    });
+    if (!quote) {
+      throw new Error(`Quote with reference ID ${referenceId} not found`);
+    }
+    return quote;
+  }
+
   async findAll(): Promise<Quote[]> {
     return this.find({
-      relations: ['items'],
+      relations: ['items', 'client'],
       order: {
         createdAt: 'DESC',
       },
@@ -32,7 +45,7 @@ export class QuoteRepository extends Repository<Quote> {
       order: {
         sequenceNumber: 'DESC',
       },
-      relations: ['items'],
+      relations: ['items', 'client'],
     });
   }
 }

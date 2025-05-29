@@ -1,0 +1,89 @@
+<div class="products-header">
+  <button nz-button nzType="primary" (click)="openNewProductModal()">
+    New product
+  </button>
+
+  <nz-input-group [nzSuffix]="suffixIcon">
+    <input
+      nz-input
+      [formControl]="filterControl"
+      placeholder="Rechercher un produit..."
+    />
+  </nz-input-group>
+  <ng-template #suffixIcon>
+    <span nz-icon nzType="search"></span>
+  </ng-template>
+</div>
+
+@if (loading()) {
+<div class="loading-container">
+  <nz-spin nzTip="Loading..."></nz-spin>
+</div>
+} @else if (error()) {
+<div class="error-container">
+  <p>{{ error() }}</p>
+</div>
+} @else {
+<div class="products-list">
+  <nz-table
+    #productsTable
+    [nzData]="products()"
+    [nzTotal]="totalItems()"
+    [nzPageIndex]="currentPage()"
+    [nzPageSize]="itemsPerPage()"
+    [nzFrontPagination]="false"
+    [nzShowSizeChanger]="true"
+    [nzPageSizeOptions]="[5, 10, 20, 30, 50]"
+    (nzPageIndexChange)="onPageChange($event)"
+    (nzPageSizeChange)="onPageSizeChange($event)"
+    (nzQueryParams)="onQueryParamsChange($event)"
+  >
+    <thead>
+      <tr>
+        <th [nzSortOrder]="sort() === 'productId' ? (order() === 'ASC' ? 'ascend' : 'descend') : null" nzShowSort="true" nzColumnKey="productId">
+          ID
+        </th>
+        <th [nzSortOrder]="sort() === 'productCode' ? (order() === 'ASC' ? 'ascend' : 'descend') : null" nzShowSort="true" nzColumnKey="productCode">
+          Code
+        </th>
+        <th [nzSortOrder]="sort() === 'name' ? (order() === 'ASC' ? 'ascend' : 'descend') : null" nzShowSort="true" nzColumnKey="name">
+          Name
+        </th>
+        <th [nzSortOrder]="sort() === 'description' ? (order() === 'ASC' ? 'ascend' : 'descend') : null" nzShowSort="true" nzColumnKey="description">
+          Description
+        </th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (product of productsTable.data; track product.id) {
+      <tr>
+        <td>{{ product.productId }}</td>
+        <td>{{ product.productCode }}</td>
+        <td>{{ product.name }}</td>
+        <td>{{ product.description }}</td>
+        <td>
+          <button
+            nz-button
+            nzType="text"
+            (click)="openEditProductModal(product)"
+            [disabled]="loading()"
+          >
+            <span nz-icon nzType="edit"></span>
+          </button>
+          <button
+            nz-button
+            nzType="text"
+            nzDanger
+            (click)="confirmDelete(product)"
+            [nzLoading]="loading()"
+          >
+            <span nz-icon nzType="delete"></span>
+          </button>
+        </td>
+      </tr>
+      }
+    </tbody>
+  </nz-table>
+</div>
+}

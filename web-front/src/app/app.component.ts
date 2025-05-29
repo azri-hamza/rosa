@@ -1,10 +1,12 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterModule, RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { NzBreadCrumbModule } from 'ng-zorro-antd/breadcrumb';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzLayoutModule } from 'ng-zorro-antd/layout';
 import { NzMenuModule } from 'ng-zorro-antd/menu';
+import { AuthService } from '@rosa/auth';
+import { NzButtonModule } from 'ng-zorro-antd/button';
 
 @Component({
   standalone: true,
@@ -17,6 +19,7 @@ import { NzMenuModule } from 'ng-zorro-antd/menu';
     NzBreadCrumbModule,
     NzIconModule,
     RouterOutlet,
+    NzButtonModule,
   ],
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -24,5 +27,11 @@ import { NzMenuModule } from 'ng-zorro-antd/menu';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent {
-  title = 'web-front';
+  private authService = inject(AuthService);
+  
+  isLoggedIn = this.authService.isAuthenticated$;
+
+  logout() {
+    this.authService.logout();
+  }
 }

@@ -1,0 +1,82 @@
+<div class="delivery-notes-container">
+  <div class="header">
+    <h1>Delivery Notes</h1>
+    <button nz-button nzType="primary" (click)="openDeliveryNoteForm()">
+      <span nz-icon nzType="plus"></span>
+      New Delivery Note
+    </button>
+  </div>
+
+  <app-delivery-notes-filter 
+    [filters]="filters()" 
+    (filtersChange)="onFiltersChange($event)">
+  </app-delivery-notes-filter>
+
+  <nz-table 
+    #basicTable 
+    [nzData]="deliveryNotes()" 
+    [nzLoading]="loading()"
+    nzShowSizeChanger
+    [nzPageSize]="10"
+    [nzPageSizeOptions]="[10, 20, 50]">
+    
+    <thead>
+      <tr>
+        <th>Reference</th>
+        <th>Client</th>
+        <th>Delivery Date</th>
+        <th>Status</th>
+        <th>Items</th>
+        <th>Total Amount</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    
+    <tbody>
+      <tr *ngFor="let deliveryNote of basicTable.data">
+        <td>
+          <strong>{{ deliveryNote.year }}-{{ deliveryNote.sequenceNumber.toString().padStart(4, '0') }}</strong>
+        </td>
+        <td>
+          @if (deliveryNote.client) {
+            <div>
+              <strong>{{ deliveryNote.client.name }}</strong>
+              @if (deliveryNote.client.taxIdentificationNumber) {
+                <div class="text-gray-500 text-sm">{{ deliveryNote.client.taxIdentificationNumber }}</div>
+              }
+            </div>
+          } @else {
+            <span class="text-gray-400">No client</span>
+          }
+        </td>
+        <td>{{ deliveryNote.deliveryDate | date:'short' }}</td>
+        <td>
+          <nz-tag [nzColor]="getStatusColor(deliveryNote.status)">
+            {{ deliveryNote.status | titlecase }}
+          </nz-tag>
+        </td>
+        <td>{{ deliveryNote.itemCount }} items</td>
+        <td>{{ deliveryNote.totalAmount | currency:'EUR':'symbol':'1.2-2' }}</td>
+        <td>
+          <button 
+            nz-button 
+            nzType="link" 
+            nzSize="small" 
+            (click)="editDeliveryNote(deliveryNote)"
+            title="Edit">
+            <span nz-icon nzType="edit"></span>
+          </button>
+          <button 
+            nz-button 
+            nzType="link" 
+            nzSize="small" 
+            nzDanger
+            (click)="deleteDeliveryNote(deliveryNote)"
+            title="Delete">
+            <span nz-icon nzType="delete"></span>
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </nz-table>
+</div> 

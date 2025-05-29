@@ -5,6 +5,7 @@
     "paths": {
       "@rosa/api-client": ["libs/shared/api-client/src/index.ts"],
       "@rosa/api-core": ["libs/shared/api-core/src/index.ts"],
+      "@rosa/auth": ["libs/shared/auth/src/index.ts"],
       "@rosa/old-data-access": ["libs/old-data-access/src/index.ts"],
       "@rosa/sales/data-access": [
         "libs/domains/sales/data-access/src/index.ts"

@@ -2,3 +2,8 @@ export * from './quote.entity';
 export * from './user.entity';
 export * from './quote-item.entity';
 export * from './product.entity';
+export * from './client.entity';
+export * from './auditable.entity';
+export * from './base.entity';
+export * from './delivery-note.entity';
+export * from './delivery-note-item.entity';

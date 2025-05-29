@@ -1,8 +1,10 @@
 export interface QuoteItem {
-  id: string;
+  id: number;
+  quoteId: number;
   productName: string;
+  description?: string;
   quantity: number;
   unitPrice: number;
   totalPrice: number;
-  quoteId: string;
+  productId: string;
 }

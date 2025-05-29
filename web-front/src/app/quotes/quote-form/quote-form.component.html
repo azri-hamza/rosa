@@ -7,19 +7,120 @@
         formControlName="year"
         [nzMin]="2000"
         [nzMax]="2100"
+        [nzPlaceHolder]="'Select year'"
       ></nz-input-number>
+    </nz-form-control>
+  </nz-form-item>
+
+  <nz-form-item>
+    <nz-form-label [nzSpan]="6" nzFor="userDate">Custom Date</nz-form-label>
+    <nz-form-control [nzSpan]="14">
+      <nz-date-picker
+        id="userDate"
+        formControlName="userDate"
+        [nzPlaceHolder]="'Select custom date'"
+        [nzFormat]="'yyyy-MM-dd'"
+        [nzAllowClear]="true"
+        [nzShowTime]="false"
+        [nzShowToday]="true"
+        [nzDisabled]="false"
+        [nzPopupStyle]="{ 'z-index': '9999' }"
+        nzSize="default"
+        style="width: 100%;"
+        (nzOnOpenChange)="onDatePickerOpenChange($event)"
+      ></nz-date-picker>
+    </nz-form-control>
+  </nz-form-item>
+
+  <nz-form-item>
+    <nz-form-label [nzSpan]="6" nzFor="client">Client</nz-form-label>
+    <nz-form-control [nzSpan]="14">
+      <input
+        nz-input
+        id="client"
+        placeholder="Search for a client..."
+        [nzAutocomplete]="clientAuto"
+        [value]="selectedClient ? getClientDisplayName(selectedClient) : ''"
+        (input)="onClientSearch($any($event.target).value)"
+        [attr.autocomplete]="'off'"
+      />
+      <nz-autocomplete 
+        #clientAuto="nzAutocomplete"
+        [nzDefaultActiveFirstOption]="false"
+        [nzBackfill]="false"
+      >
+        <nz-auto-option
+          *ngFor="let client of clientOptions"
+          [nzValue]="getClientDisplayName(client)"
+          [nzLabel]="getClientDisplayName(client)"
+          (click)="onClientSelected(client)"
+        >
+          <div>
+            <strong>{{ client.name }}</strong>
+            <div style="font-size: 12px; color: #888;">
+              <span *ngIf="client.phoneNumber">📞 {{ client.phoneNumber }}</span>
+              <span *ngIf="client.taxIdentificationNumber" style="margin-left: 8px;">🆔 {{ client.taxIdentificationNumber }}</span>
+            </div>
+            <div *ngIf="client.address" style="font-size: 11px; color: #aaa;">📍 {{ client.address }}</div>
+          </div>
+        </nz-auto-option>
+        <nz-auto-option *ngIf="clientSearchLoading" nzDisabled>
+          <span nz-icon nzType="loading"></span> Loading clients...
+        </nz-auto-option>
+        <nz-auto-option *ngIf="clientOptions.length === 0 && !clientSearchLoading" nzDisabled>
+          No clients found
+        </nz-auto-option>
+      </nz-autocomplete>
     </nz-form-control>
   </nz-form-item>
 
   <div class="items-section">
     <div class="items-header">
       <h3>Quote Items</h3>
-      <button nz-button nzType="default" (click)="addItem()">Add Item</button>
+      <button nz-button nzType="primary" (click)="addItem()">
+        <span nz-icon nzType="plus"></span>Add Item
+      </button>
     </div>
 
     <div formArrayName="items">
       @for (item of items.controls; track $index) {
       <div [formGroupName]="$index" class="item-form">
+        <nz-form-item>
+          <nz-form-label>Product Name</nz-form-label>
+          <nz-form-control nzErrorTip="Please input product name">
+            <input
+              nz-input
+              formControlName="productName"
+              placeholder="Search for a product..."
+              [nzAutocomplete]="auto"
+              [attr.autocomplete]="'off'"
+              #productNameInput
+              (focus)="onInputFocus($index)"
+              (keydown.enter)="onEnterKeydown($event, auto, $index)"
+            />
+            <nz-autocomplete 
+              #auto="nzAutocomplete"
+              [nzDefaultActiveFirstOption]="true"
+              [nzBackfill]="false"
+              (selectionChange)="onProductSelected($event, $index)"
+            >
+              <nz-auto-option
+                *ngFor="let option of productOptions[$index]"
+                [nzValue]="option.name"
+                [nzLabel]="option.name"
+                (click)="selectProduct(option, $index)"
+              >
+                <span>{{ option.name }}</span>
+                <small style="color: #888; margin-left: 8px;">{{ option.productCode }}</small>
+                <div *ngIf="option.description" style="font-size: 12px; color: #888; margin-top: 4px;">{{ option.description }}</div>
+              </nz-auto-option>
+              <nz-auto-option *ngIf="productSearchLoading[$index]" nzDisabled>
+                <span nz-icon nzType="loading"></span> Loading...
+              </nz-auto-option>
+            </nz-autocomplete>
+          </nz-form-control>
+        </nz-form-item>
+
         <nz-form-item>
           <nz-form-label>Product ID</nz-form-label>
           <nz-form-control nzErrorTip="Please input product ID">
@@ -27,58 +128,60 @@
               nz-input
               formControlName="productId"
               placeholder="Product ID"
+              [disabled]="true"
             />
           </nz-form-control>
         </nz-form-item>
 
-        <nz-form-item>
-          <nz-form-label>Product Name</nz-form-label>
-          <nz-form-control nzErrorTip="Please input product name">
-            <input
-              nz-input
-              formControlName="productName"
-              placeholder="Product Name"
-            />
-          </nz-form-control>
-        </nz-form-item>
+        <div class="quantity-price-group">
+          <nz-form-item>
+            <nz-form-label>Quantity</nz-form-label>
+            <nz-form-control nzErrorTip="Please input quantity">
+              <nz-input-number
+                formControlName="quantity"
+                [nzMin]="1"
+                [nzStep]="1"
+                [nzPlaceHolder]="'Enter quantity'"
+              />
+            </nz-form-control>
+          </nz-form-item>
 
-        <nz-form-item>
-          <nz-form-label>Quantity</nz-form-label>
-          <nz-form-control nzErrorTip="Please input quantity">
-            <nz-input-number
-              formControlName="quantity"
-              [nzMin]="1"
-              [nzStep]="1"
-            />
-          </nz-form-control>
-        </nz-form-item>
+          <nz-form-item>
+            <nz-form-label>Unit Price</nz-form-label>
+            <nz-form-control nzErrorTip="Please input unit price">
+              <nz-input-number
+                formControlName="unitPrice"
+                [nzMin]="0"
+                [nzStep]="0.01"
+                [nzPrecision]="2"
+                [nzPlaceHolder]="'Enter price'"
+              />
+            </nz-form-control>
+          </nz-form-item>
 
-        <nz-form-item>
-          <nz-form-label>Unit Price</nz-form-label>
-          <nz-form-control nzErrorTip="Please input unit price">
-            <nz-input-number
-              formControlName="unitPrice"
-              [nzMin]="0"
-              [nzStep]="0.01"
-              [nzPrecision]="2"
-            />
-          </nz-form-control>
-        </nz-form-item>
+          <nz-form-item>
+            <nz-form-label>Total</nz-form-label>
+            <nz-form-control>
+              <nz-input-number
+                formControlName="totalPrice"
+                [nzDisabled]="true"
+                [nzPrecision]="2"
+              />
+            </nz-form-control>
+          </nz-form-item>
 
-        <nz-form-item>
-          <nz-form-label>Total</nz-form-label>
-          <nz-form-control>
-            <nz-input-number
-              formControlName="totalPrice"
-              [nzDisabled]="true"
-              [nzPrecision]="2"
-            />
-          </nz-form-control>
-        </nz-form-item>
-
-        <button nz-button nzType="text" nzDanger (click)="removeItem($index)">
-          <span nz-icon nzType="delete"></span>
-        </button>
+          <button 
+            nz-button 
+            nzType="text" 
+            nzDanger 
+            type="button" 
+            (click)="removeItem($index)"
+            nz-tooltip
+            nzTooltipTitle="Remove item"
+          >
+            <span nz-icon nzType="delete" nzTheme="outline"></span>
+          </button>
+        </div>
       </div>
       }
     </div>
@@ -90,9 +193,9 @@
       nz-button
       nzType="primary"
       type="submit"
-      [disabled]="!quoteForm.valid || items.length === 0"
+      [disabled]="!isFormValid"
     >
-      Save
+      Save Quote
     </button>
   </div>
 </form>

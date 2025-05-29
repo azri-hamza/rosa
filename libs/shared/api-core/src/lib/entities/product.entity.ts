@@ -1,23 +1,30 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, OneToMany } from 'typeorm';
+import { BaseEntity } from './base.entity';
+import { QuoteItem } from './quote-item.entity';
 
 @Entity()
-export class Product {
-  @PrimaryGeneratedColumn()
-  id: number;
-
+export class Product extends BaseEntity {
   @Column({
+    name: 'product_id',
     type: 'uuid',
     unique: true,
-    default: () => 'gen_random_uuid()',
+    nullable: false,
+    default: () => 'uuid_generate_v4()',
   })
-  product_id: string;
+  productId!: string;
 
-  @Column({ type: 'varchar', unique: true })
-  product_code: string;
+  @Column({ name: 'product_code', type: 'varchar', unique: true })
+  productCode!: string;
 
   @Column({ type: 'varchar' })
-  name: string;
+  name!: string;
 
   @Column({ type: 'text' })
-  description: string;
+  description!: string;
+
+  @OneToMany(() => QuoteItem, (quoteItem) => quoteItem.product, {
+    cascade: false,
+    eager: false
+  })
+  quoteItems!: QuoteItem[];
 }

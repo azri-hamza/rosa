@@ -6,8 +6,19 @@
   float: left;
 }
 
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+}
+
 .header-menu {
   line-height: 64px;
+}
+
+.auth-buttons {
+  margin-right: 24px;
 }
 
 .sider-menu {

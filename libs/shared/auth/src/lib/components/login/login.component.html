@@ -1,0 +1,26 @@
+<div class="login-container">
+  <nz-card [nzBordered]="false" class="login-card">
+    <h2 class="login-title">Welcome Back</h2>
+    <form nz-form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+      <nz-form-item>
+        <nz-form-control nzErrorTip="Please input a valid email!">
+          <nz-input-group nzPrefixIcon="user">
+            <input type="email" nz-input formControlName="username" placeholder="Email" [disabled]="isLoading" />
+          </nz-input-group>
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item>
+        <nz-form-control nzErrorTip="Password must be at least 6 characters!">
+          <nz-input-group nzPrefixIcon="lock">
+            <input type="password" nz-input formControlName="password" placeholder="Password" [disabled]="isLoading" />
+          </nz-input-group>
+        </nz-form-control>
+      </nz-form-item>
+
+      <button nz-button nzType="primary" [nzBlock]="true" type="submit" [nzLoading]="isLoading">
+        {{ isLoading ? 'Logging in...' : 'Log in' }}
+      </button>
+    </form>
+  </nz-card>
+</div> 

@@ -1,0 +1,38 @@
+<div class="users-container">
+  <div class="users-header">
+    <button nz-button nzType="primary" (click)="openNewUserModal()">
+      New
+    </button>
+    <h1>Users List</h1>
+  </div>
+  
+  @if (usersStore.loading()) {
+    <div class="loading">Loading users...</div>
+  } @else {
+    <div class="users-grid">
+      @for (user of users(); track user.id) {
+        <div class="user-card">
+          <button nz-button nzType="text" nzShape="circle" class="edit-btn" (click)="openEditUserModal(user)" style="position: absolute; top: 8px; right: 40px;">
+            <span nz-icon nzType="edit" nzTheme="outline"></span>
+          </button>
+          <button nz-button nzType="text" nzShape="circle" nzDanger class="delete-btn" (click)="confirmDelete(user)" style="position: absolute; top: 8px; right: 8px;">
+            <span nz-icon nzType="delete" nzTheme="outline"></span>
+          </button>
+          <p class="user-id">ID: {{ user.id }}</p>
+          <h2 class="user-name">{{ user.name }}</h2>
+          <p class="user-email">{{ user.email }}</p>
+        </div>
+      }
+    </div>
+    <nz-pagination
+      [nzPageIndex]="currentPage()"
+      [nzPageSize]="itemsPerPage()"
+      [nzTotal]="totalItems()"
+      [nzShowSizeChanger]="true"
+      [nzPageSizeOptions]="[5, 10, 20, 50]"
+      (nzPageIndexChange)="onPageChange($event)"
+      (nzPageSizeChange)="onPageSizeChange($event)"
+      style="margin-top: 2rem; display: flex; justify-content: center;"
+    ></nz-pagination>
+  }
+</div>

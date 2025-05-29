@@ -6,5 +6,6 @@
   },
   "cSpell.words": ["postgres", "sider"],
   "cSpell.language": "en,fr-FR",
-  "cSpell.languageSettings": []
+  "cSpell.languageSettings": [],
+  "nxConsole.generateAiAgentRules": true
 }

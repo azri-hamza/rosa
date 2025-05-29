@@ -1,0 +1,34 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+- The project is a monorepo managed using Nx. All applications and libraries are organized using Nx conventions.
+
+- The backend is built using NestJS. Follow NestJS best practices for modular architecture, dependency injection, and controller/service patterns.
+
+- The frontend uses Angular 19. Prefer the new Angular syntax including @if, @for, control flow blocks, and standalone components.
+
+- Use Angular Signals for state management and reactivity. Avoid legacy @Input()/@Output() and prefer reactive primitives wherever possible.
+
+- NgRx is used with the latest syntax supporting Signals-based stores. Avoid deprecated createReducer/createEffect APIs in favor of signal-centric usage.
+
+- Use NG-ZORRO as the primary UI component library for Angular 15+. Ensure compatibility with Angular 19 and follow NG-ZORRO's theming and component APIs.
+
+- Use TypeORM for database interaction in NestJS. Follow best practices for entity declaration, migrations, and repository-based querying.
+
+- The database is PostgreSQL. All schema definitions, migrations, and queries should be optimized for PostgreSQL syntax and features.
+
+- Use feature-driven architecture in both frontend and backend. Group code by domain/feature, not by file type.
+
+- Use consistent naming conventions across the stack. Prefer kebab-case for file names, camelCase for variables, and PascalCase for classes.
+
+- Code must be typed. Avoid using any or implicit any types in TypeScript.
+
+- Use environment-specific configuration using Nx's environment support (e.g., process.env, .env, and @nestjs/config).
+
+- Use modern Angular libraries like @angular/cdk, @angular/animations, and integrate with Tailwind CSS if styling is needed (optional).
+
+- For APIs, prefer RESTful design but allow GraphQL if noted explicitly. Always validate and transform incoming requests using class-validator and class-transformer in DTOs.
+
+- Ensure end-to-end type safety where possible (e.g., use DTOs with TypeORM and interfaces shared with Angular via a shared Nx library).

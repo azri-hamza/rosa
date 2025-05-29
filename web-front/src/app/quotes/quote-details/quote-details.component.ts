@@ -2,9 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
-  computed,
   inject,
-  Signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -14,7 +12,6 @@ import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzIconModule, NZ_ICONS } from 'ng-zorro-antd/icon';
 import { LeftOutline } from '@ant-design/icons-angular/icons';
-import { Quote } from '@rosa/types';
 
 @Component({
   selector: 'app-quote-details',
@@ -95,13 +92,12 @@ export class QuoteDetailsComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private store = inject(QuotesStore);
 
-  quoteId = this.route.snapshot.paramMap.get('id');
-  quote = computed(() => {
-    const quotes = (this.store.quotes as unknown as Signal<Quote[]>)();
-    return quotes.find((q: Quote) => q.id === this.quoteId);
-  });
+  quote = this.store.selectedQuote;
 
   ngOnInit() {
-    this.store.loadQuotes();
+    const referenceId = this.route.snapshot.paramMap.get('id');
+    if (referenceId) {
+      this.store.loadQuoteByReferenceId(referenceId);
+    }
   }
 }

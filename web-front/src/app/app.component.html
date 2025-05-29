@@ -1,11 +1,24 @@
 <nz-layout>
   <nz-header>
     <div class="logo"></div>
-    <ul nz-menu nzTheme="dark" nzMode="horizontal" class="header-menu">
-      <li nz-menu-item nzSelected>nav 1</li>
-      <li nz-menu-item>nav 2</li>
-      <li nz-menu-item>nav 3</li>
-    </ul>
+    <div class="header-content">
+      <ul nz-menu nzTheme="dark" nzMode="horizontal" class="header-menu">
+        <li nz-menu-item nzSelected>nav 1</li>
+        <li nz-menu-item>nav 2</li>
+        <li nz-menu-item>nav 3</li>
+      </ul>
+      <div class="auth-buttons">
+        @if ((isLoggedIn | async) === false) {
+          <a nz-button nzType="primary" routerLink="/login">
+            Login
+          </a>
+        } @else {
+          <button nz-button nzType="default" (click)="logout()">
+            Logout
+          </button>
+        }
+      </div>
+    </div>
   </nz-header>
   <nz-layout>
     <nz-sider nzWidth="200px" nzTheme="light">
@@ -16,8 +29,8 @@
         </li>
         <li nz-submenu nzTitle="Ventes" nzIcon="user">
           <ul>
-            <li nz-menu-item><a routerLink="/quotes"> Devis </a></li>
-            <li nz-menu-item>Bon livraison</li>
+            <li nz-menu-item><a routerLink="/quotes">Devis</a></li>
+            <li nz-menu-item><a routerLink="/delivery-notes">Bon de livraison</a></li>
             <li nz-menu-item>Facture</li>
           </ul>
         </li>
@@ -33,9 +46,11 @@
             <li nz-menu-item>Bon de sortie</li>
           </ul>
         </li>
-        <li nz-submenu nzTitle="Users" nzIcon="user">
+        <li nz-submenu nzTitle="Données de base" nzIcon="user">
           <ul>
             <li nz-menu-item><a routerLink="/users"> Users </a></li>
+            <li nz-menu-item><a routerLink="/products"> Products </a></li>
+            <li nz-menu-item><a routerLink="/clients"> Clients </a></li>
           </ul>
         </li>
       </ul>

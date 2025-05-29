@@ -1,0 +1,62 @@
+<div class="filter-container">
+  <form nz-form [formGroup]="filterForm" nzLayout="inline">
+    <nz-form-item>
+      <nz-form-label>Client</nz-form-label>
+      <nz-form-control>
+        <nz-select
+          formControlName="clientId"
+          nzPlaceHolder="Select client"
+          nzAllowClear
+          [nzLoading]="isLoadingClients"
+          style="width: 200px;">
+          <nz-option 
+            *ngFor="let client of clients" 
+            [nzValue]="client.id" 
+            [nzLabel]="client.name">
+          </nz-option>
+        </nz-select>
+      </nz-form-control>
+    </nz-form-item>
+
+    <nz-form-item>
+      <nz-form-label>Status</nz-form-label>
+      <nz-form-control>
+        <nz-select
+          formControlName="status"
+          nzPlaceHolder="Select status"
+          nzAllowClear
+          style="width: 150px;">
+          <nz-option 
+            *ngFor="let option of statusOptions" 
+            [nzValue]="option.value" 
+            [nzLabel]="option.label">
+          </nz-option>
+        </nz-select>
+      </nz-form-control>
+    </nz-form-item>
+
+    <nz-form-item>
+      <nz-form-label>Delivery Date Range</nz-form-label>
+      <nz-form-control>
+        <nz-range-picker
+          formControlName="dateRange"
+          nzFormat="yyyy-MM-dd"
+          style="width: 240px;">
+        </nz-range-picker>
+      </nz-form-control>
+    </nz-form-item>
+
+    <nz-form-item>
+      <nz-form-control>
+        <button 
+          nz-button 
+          nzType="default" 
+          (click)="clearFilters()"
+          title="Clear all filters">
+          <span nz-icon nzType="clear"></span>
+          Clear
+        </button>
+      </nz-form-control>
+    </nz-form-item>
+  </form>
+</div> 

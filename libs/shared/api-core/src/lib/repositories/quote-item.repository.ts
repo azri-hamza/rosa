@@ -14,11 +14,11 @@ export class QuoteItemRepository extends Repository<QuoteItem> {
     return item;
   }
 
-  async findByQuoteId(quoteId: string): Promise<QuoteItem[]> {
-    return this.find({
-      where: { quoteId },
-      order: { productName: 'ASC' },
-    });
+  async findByQuoteId(quoteId: number): Promise<QuoteItem[]> {
+    return this.createQueryBuilder('quoteItem')
+      .where('quoteItem.quote_id = :quoteId', { quoteId })
+      .orderBy('quoteItem.productName', 'ASC')
+      .getMany();
   }
 
   async createQuoteItem(data: Partial<QuoteItem>): Promise<QuoteItem> {
