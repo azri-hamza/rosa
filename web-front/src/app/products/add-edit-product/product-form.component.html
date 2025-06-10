@@ -31,6 +31,52 @@
   </nz-form-item>
 
   <nz-form-item>
+    <nz-form-label [nzSm]="6" [nzXs]="24" nzFor="netPrice"
+      >Net Price</nz-form-label
+    >
+    <nz-form-control
+      [nzSm]="14"
+      [nzXs]="24"
+    >
+      <nz-input-number
+        formControlName="netPrice"
+        id="netPrice"
+        [nzMin]="0"
+        [nzStep]="0.001"
+        [nzPrecision]="3"
+        nzPlaceHolder="Enter net price"
+        style="width: 100%"
+      ></nz-input-number>
+    </nz-form-control>
+  </nz-form-item>
+
+  <nz-form-item>
+    <nz-form-label [nzSm]="6" [nzXs]="24" nzFor="vatRateId"
+      >VAT Rate</nz-form-label
+    >
+    <nz-form-control
+      [nzSm]="14"
+      [nzXs]="24"
+    >
+      <nz-select
+        formControlName="vatRateId"
+        id="vatRateId"
+        nzPlaceHolder="Select VAT rate"
+        nzAllowClear
+        [nzLoading]="loading"
+        style="width: 100%"
+      >
+        @for (vatRate of vatRates; track vatRate.id) {
+          <nz-option
+            [nzValue]="vatRate.id"
+            [nzLabel]="vatRate.name + ' (' + vatRate.percentage + '%)'">
+          </nz-option>
+        }
+      </nz-select>
+    </nz-form-control>
+  </nz-form-item>
+
+  <nz-form-item>
     <nz-form-control [nzOffset]="6" [nzSpan]="14">
       <button nz-button nzType="default" (click)="cancel()">Cancel</button>
       <button

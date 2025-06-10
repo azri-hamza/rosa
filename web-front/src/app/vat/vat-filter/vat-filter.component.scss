@@ -1,0 +1,34 @@
+.vat-filter {
+  background: #fafafa;
+  padding: 16px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+
+.filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: end;
+}
+
+.rate-range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .range-separator {
+    color: #999;
+    font-weight: 500;
+  }
+}
+
+:host ::ng-deep {
+  .ant-form-item {
+    margin-bottom: 0;
+  }
+
+  .ant-form-item-label {
+    font-weight: 500;
+  }
+} 

@@ -152,8 +152,8 @@
               <nz-input-number
                 formControlName="unitPrice"
                 [nzMin]="0"
-                [nzStep]="0.01"
-                [nzPrecision]="2"
+                [nzStep]="0.001"
+                [nzPrecision]="3"
                 [nzPlaceHolder]="'Enter price'"
               />
             </nz-form-control>
@@ -165,7 +165,7 @@
               <nz-input-number
                 formControlName="totalPrice"
                 [nzDisabled]="true"
-                [nzPrecision]="2"
+                [nzPrecision]="3"
               />
             </nz-form-control>
           </nz-form-item>

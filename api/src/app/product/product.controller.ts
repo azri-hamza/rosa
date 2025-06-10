@@ -15,7 +15,7 @@ import {
   UseGuards
 } from '@nestjs/common';
 import { ProductService } from './product.service';
-import { Product } from '@rosa/api-core';
+import { Product, CreateProductDto, UpdateProductDto, ProductResponseDto } from '@rosa/api-core';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 
 @UseGuards(JwtAuthGuard)
@@ -26,14 +26,39 @@ export class ProductController {
   ) {}
 
   @Get()
-  getProducts(
-    @Query('page') page = 1, 
-    @Query('limit') limit = 10,
+  async getProducts(
+    @Query('page', new DefaultValuePipe(1)) page: number,
+    @Query('limit', new DefaultValuePipe(10)) limit: number,
     @Query('filter') filter?: string,
-    @Query('sort', new DefaultValuePipe('created_at')) sort?: string,
-    @Query('order', new DefaultValuePipe('DESC')) order?: 'ASC' | 'DESC'   
-  ): Promise<{ count: number; data: Product[] }> {
-    return this.productService.findAllProducts(page, limit, filter, sort, order);
+    @Query('sort') sort?: string,
+    @Query('order') order?: 'ASC' | 'DESC'
+  ) {
+    const { products, total } = await this.productService.findAll(page, limit, filter, sort, order);
+    
+    const productDtos: ProductResponseDto[] = products.map(product => ({
+      id: product.id,
+      productId: product.productId,
+      productCode: product.productCode,
+      name: product.name,
+      description: product.description,
+      netPrice: product.netPrice,
+      grossPrice: product.grossPrice,
+      vatRate: product.vatRate ? {
+        id: product.vatRate.id,
+        name: product.vatRate.name,
+        rate: product.vatRate.rate,
+        percentage: product.vatRate.percentage
+      } : undefined,
+      createdAt: product.createdAt,
+      updatedAt: product.updatedAt
+    }));
+
+    return {
+      data: productDtos,
+      total,
+      page,
+      limit,
+    };
   }
 
   @Get(':product_id')
@@ -46,29 +71,58 @@ export class ProductController {
   }
 
   @Post()
-  createProduct(@Body() body: Partial<Product>): Promise<Product> {
-    return this.productService.createProduct(body);
+  async createProduct(@Body() createProductDto: CreateProductDto): Promise<ProductResponseDto> {
+    const product = await this.productService.createProduct(createProductDto);
+    return {
+      id: product.id,
+      productId: product.productId,
+      productCode: product.productCode,
+      name: product.name,
+      description: product.description,
+      netPrice: product.netPrice,
+      grossPrice: product.grossPrice,
+      vatRate: product.vatRate ? {
+        id: product.vatRate.id,
+        name: product.vatRate.name,
+        rate: product.vatRate.rate,
+        percentage: product.vatRate.percentage
+      } : undefined,
+      createdAt: product.createdAt,
+      updatedAt: product.updatedAt
+    };
   }
 
   @Put(':product_id')
   async updateProduct(
     @Param('product_id') product_id: string,
-    @Body() body: Partial<Product>
-  ): Promise<Product> {
-    const product = await this.productService.updateProduct(product_id, body);
+    @Body() updateProductDto: UpdateProductDto
+  ): Promise<ProductResponseDto> {
+    const product = await this.productService.updateProduct(product_id, updateProductDto);
     if (!product) {
       throw new NotFoundException(`Product with ID ${product_id} not found`);
     }
-    return product;
+    return {
+      id: product.id,
+      productId: product.productId,
+      productCode: product.productCode,
+      name: product.name,
+      description: product.description,
+      netPrice: product.netPrice,
+      grossPrice: product.grossPrice,
+      vatRate: product.vatRate ? {
+        id: product.vatRate.id,
+        name: product.vatRate.name,
+        rate: product.vatRate.rate,
+        percentage: product.vatRate.percentage
+      } : undefined,
+      createdAt: product.createdAt,
+      updatedAt: product.updatedAt
+    };
   }
 
   @Delete(':product_id')
-  async deleteProduct(@Param('product_id', new ParseUUIDPipe()) product_id: string): Promise<void> {
-    const product = await this.productService.findProductById(product_id);
-    if (!product) {
-      throw new NotFoundException(`Product with ID ${product_id} not found`);
-    }
-    return this.productService.deleteProduct(product_id);
+  async deleteProduct(@Param('product_id') product_id: string): Promise<void> {
+    await this.productService.deleteProduct(product_id);
   }
 
   @Patch(':product_id/restore')

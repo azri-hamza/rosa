@@ -1,10 +1,10 @@
-import { Controller, Get, Post, Body, Inject, Param, ParseUUIDPipe, Put, Delete, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Inject, Param, ParseUUIDPipe, Put, Delete, UseGuards, Query, Request } from '@nestjs/common';
 import { SalesService } from './sales.service';
 import { Quote, QuoteFilterDto, DeliveryNote, DeliveryNoteFilterDto } from '@rosa/api-core';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 
-@UseGuards(JwtAuthGuard)
 @Controller('sales')
+@UseGuards(JwtAuthGuard)
 export class SalesController {
   constructor(
     @Inject(SalesService) private readonly salesService: SalesService
@@ -73,9 +73,9 @@ export class SalesController {
   // ===== DELIVERY NOTE ENDPOINTS =====
 
   @Get('delivery-notes')
-  async deliveryNotes(@Query() filterDto: DeliveryNoteFilterDto) {
+  async deliveryNotes(@Query() filterDto: DeliveryNoteFilterDto, @Request() req: any) {
     try {
-      const deliveryNotes = await this.salesService.getAllDeliveryNotes(filterDto);
+      const deliveryNotes = await this.salesService.getAllDeliveryNotes(filterDto, req.user.userId);
       return deliveryNotes.map((deliveryNote) => this.formatDeliveryNoteResponse(deliveryNote));
     } catch (error) {
       console.error('Error in delivery notes endpoint:', error);
@@ -84,9 +84,9 @@ export class SalesController {
   }
 
   @Get('delivery-notes/:id')
-  async getDeliveryNoteById(@Param('id', ParseUUIDPipe) id: string) {
+  async getDeliveryNoteById(@Param('id', ParseUUIDPipe) id: string, @Request() req: any) {
     try {
-      const deliveryNote = await this.salesService.getDeliveryNoteById(id);
+      const deliveryNote = await this.salesService.getDeliveryNoteById(id, req.user.userId);
       return this.formatDeliveryNoteResponse(deliveryNote);
     } catch (error) {
       console.error('Error getting delivery note by ID:', error);
@@ -95,9 +95,9 @@ export class SalesController {
   }
 
   @Post('delivery-notes')
-  async createDeliveryNote(@Body() createDeliveryNoteDto: any) {
+  async createDeliveryNote(@Body() createDeliveryNoteDto: any, @Request() req: any) {
     try {
-      const newDeliveryNote = await this.salesService.createDeliveryNote(createDeliveryNoteDto);
+      const newDeliveryNote = await this.salesService.createDeliveryNote(createDeliveryNoteDto, req.user.userId);
       return this.formatDeliveryNoteResponse(newDeliveryNote);
     } catch (error) {
       console.error('Error creating delivery note:', error);
@@ -108,10 +108,11 @@ export class SalesController {
   @Put('delivery-notes/:id')
   async updateDeliveryNote(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() updateDeliveryNoteDto: any
+    @Body() updateDeliveryNoteDto: any,
+    @Request() req: any
   ) {
     try {
-      const updatedDeliveryNote = await this.salesService.updateDeliveryNote(id, updateDeliveryNoteDto);
+      const updatedDeliveryNote = await this.salesService.updateDeliveryNote(id, updateDeliveryNoteDto, req.user.userId);
       return this.formatDeliveryNoteResponse(updatedDeliveryNote);
     } catch (error) {
       console.error('Error updating delivery note:', error);
@@ -120,9 +121,9 @@ export class SalesController {
   }
 
   @Delete('delivery-notes/:id')
-  async deleteDeliveryNote(@Param('id') id: string) {
+  async deleteDeliveryNote(@Param('id') id: string, @Request() req: any) {
     try {
-      await this.salesService.deleteDeliveryNote(id);
+      await this.salesService.deleteDeliveryNote(id, req.user.userId);
       return { message: 'Delivery note deleted successfully' };
     } catch (error) {
       console.error('Error in deleteDeliveryNote endpoint:', error);
@@ -130,23 +131,41 @@ export class SalesController {
     }
   }
 
+  /**
+   * Helper function to safely convert numeric values from database
+   * Handles PostgreSQL's tendency to return DECIMAL as strings and BIGINT as strings
+   */
+  private parseNumeric(value: any, type: 'int' | 'decimal' = 'decimal'): number {
+    // If already a number, return as-is
+    if (typeof value === 'number') return value;
+    
+    // If it's a string, parse appropriately
+    if (typeof value === 'string') {
+      const parsed = type === 'int' ? parseInt(value, 10) : parseFloat(value);
+      return isNaN(parsed) ? 0 : parsed;
+    }
+    
+    // For null, undefined, or other types, return 0
+    return 0;
+  }
+
   private formatQuoteResponse(quote: Quote) {
     // Create a clean response object without circular references
     const items = quote.items?.map(item => ({
-      id: item.id,
+      id: typeof item.id === 'string' ? parseInt(item.id, 10) : Number(item.id),
       productName: item.productName,
       description: item.description,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      totalPrice: item.totalPrice,
-      productId: item.product?.productId,
+      quantity: this.parseNumeric(item.quantity, 'int'),
+      unitPrice: this.parseNumeric(item.unitPrice, 'decimal'),
+      totalPrice: this.parseNumeric(item.totalPrice, 'decimal'),
+      productId: item.product?.productId || null,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt
     })) || [];
 
     // Include client data if available
     const client = quote.client ? {
-      id: quote.client.id,
+      id: typeof quote.client.id === 'string' ? parseInt(quote.client.id, 10) : Number(quote.client.id),
       referenceId: quote.client.referenceId,
       name: quote.client.name,
       taxIdentificationNumber: quote.client.taxIdentificationNumber,
@@ -155,17 +174,17 @@ export class SalesController {
     } : null;
 
     return {
-      id: quote.id,
+      id: typeof quote.id === 'string' ? parseInt(quote.id, 10) : Number(quote.id),
       referenceId: quote.referenceId,
-      year: quote.year,
-      sequenceNumber: quote.sequenceNumber,
+      year: this.parseNumeric(quote.year, 'int') || new Date().getFullYear(),
+      sequenceNumber: this.parseNumeric(quote.sequenceNumber, 'int') || 1,
       userDate: quote.userDate,
       client,
-      clientId: quote.client?.id || null,
+      clientId: quote.client?.id ? (typeof quote.client.id === 'string' ? parseInt(quote.client.id, 10) : Number(quote.client.id)) : null,
       createdAt: quote.createdAt,
       updatedAt: quote.updatedAt,
       items,
-      totalAmount: items.reduce((sum, item) => sum + Number(item.totalPrice), 0),
+      totalAmount: items.reduce((sum, item) => sum + item.totalPrice, 0),
       itemCount: items.length
     };
   }
@@ -173,21 +192,21 @@ export class SalesController {
   private formatDeliveryNoteResponse(deliveryNote: DeliveryNote) {
     // Create a clean response object without circular references
     const items = deliveryNote.items?.map(item => ({
-      id: item.id,
+      id: typeof item.id === 'string' ? parseInt(item.id, 10) : Number(item.id),
       productName: item.productName,
       description: item.description,
-      quantity: item.quantity,
-      deliveredQuantity: item.deliveredQuantity,
-      unitPrice: item.unitPrice,
-      totalPrice: item.totalPrice,
-      productId: item.product?.productId,
+      quantity: this.parseNumeric(item.quantity, 'int'),
+      deliveredQuantity: this.parseNumeric(item.deliveredQuantity, 'int'),
+      unitPrice: this.parseNumeric(item.unitPrice, 'decimal'),
+      totalPrice: this.parseNumeric(item.totalPrice, 'decimal'),
+      productId: item.product?.productId || null,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt
     })) || [];
 
     // Include client data if available
     const client = deliveryNote.client ? {
-      id: deliveryNote.client.id,
+      id: typeof deliveryNote.client.id === 'string' ? parseInt(deliveryNote.client.id, 10) : Number(deliveryNote.client.id),
       referenceId: deliveryNote.client.referenceId,
       name: deliveryNote.client.name,
       taxIdentificationNumber: deliveryNote.client.taxIdentificationNumber,
@@ -196,20 +215,20 @@ export class SalesController {
     } : null;
 
     return {
-      id: deliveryNote.id,
+      id: typeof deliveryNote.id === 'string' ? parseInt(deliveryNote.id, 10) : Number(deliveryNote.id),
       referenceId: deliveryNote.referenceId,
-      year: deliveryNote.year,
-      sequenceNumber: deliveryNote.sequenceNumber,
+      year: this.parseNumeric(deliveryNote.year, 'int') || new Date().getFullYear(),
+      sequenceNumber: this.parseNumeric(deliveryNote.sequenceNumber, 'int') || 1,
       deliveryDate: deliveryNote.deliveryDate,
       deliveryAddress: deliveryNote.deliveryAddress,
       notes: deliveryNote.notes,
       status: deliveryNote.status,
       client,
-      clientId: deliveryNote.client?.id || null,
+      clientId: deliveryNote.client?.id ? (typeof deliveryNote.client.id === 'string' ? parseInt(deliveryNote.client.id, 10) : Number(deliveryNote.client.id)) : null,
       createdAt: deliveryNote.createdAt,
       updatedAt: deliveryNote.updatedAt,
       items,
-      totalAmount: items.reduce((sum, item) => sum + Number(item.totalPrice), 0),
+      totalAmount: items.reduce((sum, item) => sum + item.totalPrice, 0),
       itemCount: items.length
     };
   }

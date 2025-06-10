@@ -8,3 +8,4 @@ export * from './lib/services/client.service';
 export * from './lib/stores/clients.store';
 export * from './lib/services/delivery-note.service';
 export * from './lib/stores/delivery-notes.store';
+export * from './lib/services/vat.service';

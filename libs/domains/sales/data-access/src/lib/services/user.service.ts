@@ -1,14 +1,19 @@
 import { inject, Injectable } from '@angular/core';
 import { ApiClient } from '@rosa/api-client';
-import { User } from '@rosa/types';
-import { PaginatedResult } from '@rosa/api-core';
+import { PaginatedResult, User } from '@rosa/types';
 
 @Injectable({ providedIn: 'root' })
 export class UserService {
   private readonly apiClient = inject(ApiClient);
 
   getUsers(page = 1, limit = 10) {
-    return this.apiClient.get<PaginatedResult<User>>('users', { params: { page: String(page), limit: String(limit) } });
+    return this.apiClient.get<PaginatedResult<User>>('users', { 
+      params: { page: String(page), limit: String(limit) } 
+    });
+  }
+
+  getUser(id: string) {
+    return this.apiClient.get<User>(`users/${id}`);
   }
 
   createUser(user: Partial<User>) {

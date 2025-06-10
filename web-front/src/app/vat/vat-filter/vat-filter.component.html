@@ -1,0 +1,105 @@
+<div class="vat-filter">
+  <form nz-form [formGroup]="filterForm" layout="inline" class="filter-form">
+    <nz-form-item>
+      <nz-form-label>Name</nz-form-label>
+      <nz-form-control>
+        <input
+          nz-input
+          formControlName="name"
+          placeholder="Search by name"
+          style="width: 150px;"
+        />
+      </nz-form-control>
+    </nz-form-item>
+
+    <nz-form-item>
+      <nz-form-label>Status</nz-form-label>
+      <nz-form-control>
+        <nz-select
+          formControlName="isActive"
+          nzPlaceHolder="All statuses"
+          nzAllowClear
+          style="width: 120px;"
+        >
+          <nz-option
+            *ngFor="let option of statusOptions"
+            [nzValue]="option.value"
+            [nzLabel]="option.label"
+          >
+          </nz-option>
+        </nz-select>
+      </nz-form-control>
+    </nz-form-item>
+
+    <nz-form-item>
+      <nz-form-label>Default</nz-form-label>
+      <nz-form-control>
+        <nz-select
+          formControlName="isDefault"
+          nzPlaceHolder="All rates"
+          nzAllowClear
+          style="width: 120px;"
+        >
+          <nz-option
+            *ngFor="let option of defaultOptions"
+            [nzValue]="option.value"
+            [nzLabel]="option.label"
+          >
+          </nz-option>
+        </nz-select>
+      </nz-form-control>
+    </nz-form-item>
+
+    <nz-form-item>
+      <nz-form-label>Country Code</nz-form-label>
+      <nz-form-control>
+        <input
+          nz-input
+          formControlName="countryCode"
+          placeholder="e.g., FR, US"
+          style="width: 100px;"
+          maxlength="10"
+        />
+      </nz-form-control>
+    </nz-form-item>
+
+    <nz-form-item>
+      <nz-form-label>Rate Range (%)</nz-form-label>
+      <nz-form-control>
+        <div class="rate-range">
+          <nz-input-number
+            formControlName="minRate"
+            [nzMin]="0"
+            [nzMax]="100"
+            [nzStep]="0.01"
+            nzPlaceHolder="Min"
+            style="width: 80px;"
+          ></nz-input-number>
+          <span class="range-separator">-</span>
+          <nz-input-number
+            formControlName="maxRate"
+            [nzMin]="0"
+            [nzMax]="100"
+            [nzStep]="0.01"
+            nzPlaceHolder="Max"
+            style="width: 80px;"
+          ></nz-input-number>
+        </div>
+      </nz-form-control>
+    </nz-form-item>
+
+    <nz-form-item>
+      <nz-form-control>
+        <button
+          nz-button
+          style="margin-left: 8px;"
+          (click)="clearFilters()"
+          nz-tooltip="Clear all filters"
+        >
+          <nz-icon nzType="clear"></nz-icon>
+          Clear
+        </button>
+      </nz-form-control>
+    </nz-form-item>
+  </form>
+</div> 

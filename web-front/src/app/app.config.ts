@@ -17,6 +17,8 @@ import {
   LockOutline,
   EditOutline,
   SearchOutline,
+  ClearOutline,
+  InboxOutline,
 } from '@ant-design/icons-angular/icons';
 import { NZ_ICONS } from 'ng-zorro-antd/icon';
 import { provideApiClient } from '@rosa/api-client';
@@ -41,6 +43,8 @@ const icons = [
   LockOutline,
   EditOutline,
   SearchOutline,
+  ClearOutline,
+  InboxOutline,
 ];
 
 export const appConfig: ApplicationConfig = {

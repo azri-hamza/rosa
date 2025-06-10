@@ -1,22 +1,25 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { Product, ProductRepository, PRODUCT_REPOSITORY } from '@rosa/api-core';
+import { Product, ProductRepository, PRODUCT_REPOSITORY, VatRate, CreateProductDto, UpdateProductDto } from '@rosa/api-core';
 import { IsNull } from 'typeorm';
+import { VatRateService } from '../vat/vat-rate.service';
 
 @Injectable()
 export class ProductService {
   constructor(
     @Inject(PRODUCT_REPOSITORY)
-    private readonly productRepository: ProductRepository
+    private readonly productRepository: ProductRepository,
+    @Inject(VatRateService) private readonly vatRateService: VatRateService
   ) {}
   
-  async findAllProducts(
+  async findAll(
     page = 1, 
     limit = 10, 
     filter?: string,
     sort = 'created_at',
     order: 'ASC' | 'DESC' = 'DESC'
-  ): Promise<{ count: number; data: Product[] }> {
-    const queryBuilder = this.productRepository.createQueryBuilder('product');
+  ): Promise<{ products: Product[]; total: number }> {
+    const queryBuilder = this.productRepository.createQueryBuilder('product')
+      .leftJoinAndSelect('product.vatRate', 'vatRate');
     
     // Only get non-deleted products
     queryBuilder.where('product.deleted_at IS NULL');
@@ -36,18 +39,32 @@ export class ProductService {
       queryBuilder.orderBy(`product.${sort}`, order);
     }
     
-    const [products, count] = await queryBuilder
+    const [products, total] = await queryBuilder
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();
       
-    return { count, data: products };
+    return { products, total };
+  }
+
+  async findAllProducts(
+    page = 1, 
+    limit = 10, 
+    filter?: string,
+    sort = 'created_at',
+    order: 'ASC' | 'DESC' = 'DESC'
+  ): Promise<{ count: number; data: Product[] }> {
+    const { products, total } = await this.findAll(page, limit, filter, sort, order);
+    return { count: total, data: products };
   }
   
   async findProductById(productId: string): Promise<Product> {
-    const product = await this.productRepository.findOne({where: {productId, deletedAt: IsNull()}});
+    const product = await this.productRepository.findOne({
+      where: { productId, deletedAt: IsNull() },
+      relations: ['vatRate']
+    });
     if (!product) {
-      throw new NotFoundException(`Product with ID ${productId} not found`);
+      throw new NotFoundException(`Product with UUID ${productId} not found`);
     }
     return product;
   }
@@ -74,18 +91,42 @@ export class ProductService {
     return generatedCode;
   }
 
-  async createProduct(data: Partial<Product>): Promise<Product> {
+  async createProduct(createProductDto: CreateProductDto): Promise<Product> {
+    let vatRate: VatRate | undefined;
+    
+    if (createProductDto.vatRateId) {
+      vatRate = await this.vatRateService.findEntityById(createProductDto.vatRateId);
+    }
+
     const product = this.productRepository.create({
-      ...data,
-      productCode:
-        data.productCode || (await this.generateUniqueProductCode()),
+      name: createProductDto.name,
+      description: createProductDto.description,
+      netPrice: createProductDto.netPrice,
+      vatRate: vatRate,
+      productCode: createProductDto.productCode || (await this.generateUniqueProductCode()),
     });
+
     return this.productRepository.save(product);
   }
 
-  async updateProduct(product_id: string, data: Partial<Product>): Promise<Product> {
+  async updateProduct(product_id: string, updateProductDto: UpdateProductDto): Promise<Product> {
     const product = await this.findProductById(product_id);
-    const updatedProduct = this.productRepository.merge(product, data);
+    
+    let vatRate: VatRate | undefined | null = product.vatRate;
+    
+    if (updateProductDto.vatRateId !== undefined) {
+      if (updateProductDto.vatRateId === null) {
+        vatRate = null;
+      } else {
+        vatRate = await this.vatRateService.findEntityById(updateProductDto.vatRateId);
+      }
+    }
+
+    const updatedProduct = this.productRepository.merge(product, {
+      ...updateProductDto,
+      vatRate: vatRate
+    });
+
     return this.productRepository.save(updatedProduct);
   }
 

@@ -23,15 +23,25 @@ async function bootstrap() {
 
   // Enable CORS for the frontend
   app.enableCors({
-    origin: ['http://localhost:4200'], // Angular dev server
+    origin: [
+      'http://localhost:4200', // Angular dev server
+      'http://localhost:8080', // Flutter web dev server
+      'http://10.0.2.2:3000',  // Android emulator access to host
+    ],
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
   const port = process.env.PORT || 3000;
-  await app.listen(port);
+  const host = process.env.HOST || '0.0.0.0'; // Bind to all interfaces for emulator access
+  
+  await app.listen(port, host);
   logger.log(
-    `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`
+    `🚀 Application is running on: http://${host}:${port}/${globalPrefix}`
+  );
+  logger.log(
+    `📱 Android emulator can access via: http://10.0.2.2:${port}/${globalPrefix}`
   );
 }
 

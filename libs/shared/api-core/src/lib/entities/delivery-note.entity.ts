@@ -2,6 +2,7 @@ import { Column, Entity, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { DeliveryNoteItem } from './delivery-note-item.entity';
 import { BaseEntity } from './base.entity';
 import { Client } from './client.entity';
+import { User } from './user.entity';
 
 @Entity()
 export class DeliveryNote extends BaseEntity {
@@ -63,6 +64,13 @@ export class DeliveryNote extends BaseEntity {
     referencedColumnName: 'id'
   })
   client!: Client | null;
+
+  @ManyToOne(() => User, { nullable: false, eager: false })
+  @JoinColumn({ 
+    name: 'created_by_user_id',
+    referencedColumnName: 'id'
+  })
+  createdByUser!: User;
 
   @OneToMany(() => DeliveryNoteItem, (item) => item.deliveryNote, { 
     cascade: true,

@@ -53,6 +53,12 @@ export const appRoutes: Route[] = [
     canActivate: [authGuard],
   },
   {
+    path: 'vat',
+    loadChildren: () => 
+      import('./vat/vat.routes').then((m) => m.VAT_ROUTES),
+    canActivate: [authGuard],
+  },
+  {
     path: '',
     redirectTo: 'dashboard',
     pathMatch: 'full',

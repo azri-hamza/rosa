@@ -93,7 +93,7 @@
         
         <div class="item-fields">
           <nz-form-item class="product-field">
-            <nz-form-label nzRequired>Product</nz-form-label>
+            <nz-form-label [nzRequired]="true">Product</nz-form-label>
             <nz-form-control nzErrorTip="Product name is required">
               <input
                 #productInput
@@ -104,11 +104,11 @@
                 (input)="onProductSearch($event)" />
               <nz-autocomplete 
                 #auto 
-                nzValuePropertyName="name"
+                [nzBackfill]="true"
                 (selectionChange)="onProductSelect($event, i)">
                 <nz-auto-option 
                   *ngFor="let product of productOptions" 
-                  [nzValue]="product"
+                  [nzValue]="product.name"
                   [nzLabel]="product.name">
                   <div>
                     <strong>{{ product.name }}</strong>
@@ -125,18 +125,17 @@
               <input
                 nz-input
                 formControlName="description"
-                placeholder="Description" />
+                placeholder="Enter description" />
             </nz-form-control>
           </nz-form-item>
 
           <nz-form-item class="quantity-field">
-            <nz-form-label nzRequired>Quantity</nz-form-label>
+            <nz-form-label [nzRequired]="true">Quantity</nz-form-label>
             <nz-form-control nzErrorTip="Quantity is required">
               <nz-input-number
                 formControlName="quantity"
                 [nzMin]="1"
-                [nzStep]="1"
-                style="width: 100%;">
+                [nzStep]="1">
               </nz-input-number>
             </nz-form-control>
           </nz-form-item>
@@ -147,56 +146,87 @@
               <nz-input-number
                 formControlName="deliveredQuantity"
                 [nzMin]="0"
-                [nzStep]="1"
-                style="width: 100%;">
+                [nzStep]="1">
               </nz-input-number>
             </nz-form-control>
           </nz-form-item>
 
           <nz-form-item class="price-field">
-            <nz-form-label nzRequired>Unit Price</nz-form-label>
+            <nz-form-label [nzRequired]="true">Unit Price</nz-form-label>
             <nz-form-control nzErrorTip="Unit price is required">
               <nz-input-number
                 formControlName="unitPrice"
                 [nzMin]="0"
-                [nzStep]="0.01"
+                [nzStep]="0.001"
+                [nzPrecision]="3"
                 [nzFormatter]="currencyFormatter"
-                [nzParser]="currencyParser"
-                style="width: 100%;">
+                [nzParser]="currencyParser">
               </nz-input-number>
             </nz-form-control>
           </nz-form-item>
 
           <nz-form-item class="total-field">
-            <nz-form-label>Total</nz-form-label>
+            <nz-form-label>Net Total</nz-form-label>
             <nz-form-control>
               <nz-input-number
                 formControlName="totalPrice"
                 [nzDisabled]="true"
-                [nzFormatter]="currencyFormatter"
-                style="width: 100%;">
+                [nzPrecision]="3"
+                [nzFormatter]="currencyFormatter">
               </nz-input-number>
             </nz-form-control>
           </nz-form-item>
 
-          <div class="item-actions">
-            <button 
-              type="button" 
-              nz-button 
-              nzType="text" 
-              nzDanger
-              (click)="removeItem(i)"
-              [disabled]="items.length === 1">
-              <span nz-icon nzType="delete"></span>
-            </button>
-          </div>
+          <nz-form-item class="vat-info-field" *ngIf="getSelectedProduct(i)?.vatRate">
+            <nz-form-label>VAT ({{ getSelectedProduct(i)?.vatRate?.percentage }}%)</nz-form-label>
+            <nz-form-control>
+              <nz-input-number
+                [ngModel]="getVatAmount(i)"
+                [nzDisabled]="true"
+                [nzPrecision]="3"
+                [nzFormatter]="currencyFormatter">
+              </nz-input-number>
+            </nz-form-control>
+          </nz-form-item>
+
+          <nz-form-item class="gross-total-field" *ngIf="getSelectedProduct(i)?.vatRate">
+            <nz-form-label>Gross Total</nz-form-label>
+            <nz-form-control>
+              <nz-input-number
+                [ngModel]="getItemGrossTotal(i)"
+                [nzDisabled]="true"
+                [nzPrecision]="3"
+                [nzFormatter]="currencyFormatter">
+              </nz-input-number>
+            </nz-form-control>
+          </nz-form-item>
+        </div>
+
+        <div class="item-actions">
+          <button 
+            type="button" 
+            nz-button 
+            nzType="text" 
+            nzDanger
+            (click)="removeItem(i)"
+            [disabled]="items.length === 1">
+            <span nz-icon nzType="delete"></span>
+          </button>
         </div>
       </div>
     </div>
 
     <div class="total-section">
-      <div class="total-amount">
-        <strong>Total Amount: {{ getTotalAmount() | currency:'EUR':'symbol':'1.2-2' }}</strong>
+      <div class="total-breakdown">
+        <div class="total-line">
+          <span>Net Total: {{ getNetTotal() | currency:'EUR':'symbol':'1.3-3' }}</span>
+        </div>
+        <div class="total-line" *ngIf="getTotalVatAmount() > 0">
+          <span>VAT Total: {{ getTotalVatAmount() | currency:'EUR':'symbol':'1.3-3' }}</span>
+        </div>
+        <div class="total-line total-amount">
+          <strong>Gross Total: {{ getGrossTotal() | currency:'EUR':'symbol':'1.3-3' }}</strong>
+        </div>
       </div>
     </div>
   </div>

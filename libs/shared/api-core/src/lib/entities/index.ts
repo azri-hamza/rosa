@@ -7,3 +7,4 @@ export * from './auditable.entity';
 export * from './base.entity';
 export * from './delivery-note.entity';
 export * from './delivery-note-item.entity';
+export * from './vat.entity';

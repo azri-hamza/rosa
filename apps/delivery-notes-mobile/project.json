@@ -1,0 +1,9 @@
+{
+  "name": "delivery-notes-mobile",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/delivery-notes-mobile/src",
+  "tags": [
+    "type:app",
+    "scope:mobile"
+  ]
+}

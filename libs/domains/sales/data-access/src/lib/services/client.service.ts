@@ -1,7 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { ApiClient } from '@rosa/api-client';
-import { Client, CreateClientRequest, UpdateClientRequest } from '@rosa/types';
-import { PaginatedResult } from '@rosa/api-core';
+import { Client, CreateClientRequest, UpdateClientRequest, PaginatedResult } from '@rosa/types';
 
 @Injectable({ providedIn: 'root' })
 export class ClientService {

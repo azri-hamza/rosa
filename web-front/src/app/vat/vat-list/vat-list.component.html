@@ -1,0 +1,166 @@
+@if (error()) {
+  <nz-alert 
+    nzType="error" 
+    [nzMessage]="error()!"
+    nzCloseable
+    (nzOnClose)="error.set(null)"
+    style="margin-bottom: 16px;">
+  </nz-alert>
+}
+
+<app-vat-filter (filtersChange)="onFiltersChange($event)"></app-vat-filter>
+
+<div class="vat-list-header">
+  <div class="search-section">
+    <nz-input-group [nzSuffix]="suffixIconSearch">
+      <input 
+        type="text" 
+        nz-input 
+        placeholder="Search VAT rates..." 
+        [formControl]="searchControl"
+      />
+    </nz-input-group>
+    <ng-template #suffixIconSearch>
+      <nz-icon nzType="search"></nz-icon>
+    </ng-template>
+  </div>
+  
+  <button 
+    nz-button 
+    nzType="primary" 
+    (click)="openVatForm()"
+    nz-tooltip="Create new VAT rate"
+  >
+    <nz-icon nzType="plus"></nz-icon>
+    New VAT Rate
+  </button>
+</div>
+
+<nz-table 
+  #vatTable 
+  [nzData]="vatRates()" 
+  [nzLoading]="loading()"
+  nzShowSizeChanger
+  nzShowQuickJumper
+  [nzFrontPagination]="true"
+  [nzPageSizeOptions]="[10, 20, 50]"
+>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Rate</th>
+      <th>Country</th>
+      <th>Status</th>
+      <th>Default</th>
+      <th>Effective Period</th>
+      <th>Description</th>
+      <th nzWidth="120px">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (vatRate of vatRates(); track vatRate.id) {
+      <tr>
+        <td>
+          <strong>{{ vatRate.name }}</strong>
+        </td>
+        <td>
+          <nz-tag [nzColor]="vatRate.isDefault ? 'green' : 'blue'">
+            {{ formatPercentage(vatRate.rate) }}
+          </nz-tag>
+        </td>
+        <td>
+          @if (vatRate.countryCode) {
+            <nz-tag nzColor="purple">{{ vatRate.countryCode }}</nz-tag>
+          } @else {
+            <span class="text-muted">All countries</span>
+          }
+        </td>
+        <td>
+          <nz-tag [nzColor]="vatRate.isActive ? 'green' : 'red'">
+            {{ vatRate.isActive ? 'Active' : 'Inactive' }}
+          </nz-tag>
+        </td>
+        <td>
+          @if (vatRate.isDefault) {
+            <nz-tag nzColor="gold">Default</nz-tag>
+          } @else {
+            <button
+              nz-button
+              nzType="link"
+              nzSize="small"
+              (click)="setAsDefault(vatRate)"
+              nz-tooltip="Set as default"
+            >
+              Set Default
+            </button>
+          }
+        </td>
+        <td>
+          @if (vatRate.effectiveFrom || vatRate.effectiveTo) {
+            <div class="date-range">
+              @if (vatRate.effectiveFrom) {
+                <div>From: {{ vatRate.effectiveFrom | date:'mediumDate' }}</div>
+              }
+              @if (vatRate.effectiveTo) {
+                <div>To: {{ vatRate.effectiveTo | date:'mediumDate' }}</div>
+              }
+            </div>
+          } @else {
+            <span class="text-muted">No restrictions</span>
+          }
+        </td>
+        <td>
+          @if (vatRate.description) {
+            <span nz-tooltip [nzTooltipTitle]="vatRate.description">
+              {{ vatRate.description.length > 30 ? (vatRate.description | slice:0:30) + '...' : vatRate.description }}
+            </span>
+          } @else {
+            <span class="text-muted">No description</span>
+          }
+        </td>
+        <td>
+          <div class="action-buttons">
+            <button
+              nz-button
+              nzType="link"
+              nzSize="small"
+              (click)="openVatForm(vatRate)"
+              nz-tooltip="Edit VAT rate"
+            >
+              <nz-icon nzType="edit"></nz-icon>
+            </button>
+            <button
+              nz-button
+              nzType="link"
+              nzDanger
+              nzSize="small"
+              nz-popconfirm
+              nzPopconfirmTitle="Are you sure you want to delete this VAT rate?"
+              nzPopconfirmPlacement="left"
+              (nzOnConfirm)="deleteVatRate(vatRate.id)"
+              nz-tooltip="Delete VAT rate"
+            >
+              <nz-icon nzType="delete"></nz-icon>
+            </button>
+          </div>
+        </td>
+      </tr>
+    } @empty {
+      <tr>
+        <td colspan="8" class="no-data">
+          @if (loading()) {
+            <nz-spin nzSimple></nz-spin>
+          } @else {
+            <div class="empty-state">
+              <nz-icon nzType="inbox" style="font-size: 48px; color: #d9d9d9;"></nz-icon>
+              <p>No VAT rates found</p>
+              <button nz-button nzType="primary" (click)="openVatForm()">
+                Create First VAT Rate
+              </button>
+            </div>
+          }
+        </td>
+      </tr>
+    }
+  </tbody>
+</nz-table> 

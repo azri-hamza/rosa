@@ -13,6 +13,7 @@ import {
   FormBuilder,
   FormGroup,
   ReactiveFormsModule,
+  FormsModule,
   Validators,
 } from '@angular/forms';
 import { NzFormModule } from 'ng-zorro-antd/form';
@@ -35,6 +36,7 @@ import { NzAutocompleteModule } from 'ng-zorro-antd/auto-complete';
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    FormsModule,
     NzFormModule,
     NzInputModule,
     NzInputNumberModule,
@@ -143,7 +145,7 @@ export class DeliveryNoteFormComponent implements OnInit {
 
   addItem(item?: any) {
     const itemForm = this.fb.group({
-      productName: [item?.productName || '', [Validators.required]],
+      productName: [(item?.productName && typeof item.productName === 'object') ? item.productName.name : (item?.productName || ''), [Validators.required]],
       description: [item?.description || ''],
       quantity: [item?.quantity || 1, [Validators.required, Validators.min(1)]],
       deliveredQuantity: [item?.deliveredQuantity || 0, [Validators.min(0)]],
@@ -178,16 +180,59 @@ export class DeliveryNoteFormComponent implements OnInit {
   }
 
   onProductSelect(option: any, index: number) {
-    const product = option.nzValue as Product;
+    const productName = option.nzValue;
+    const product = this.productOptions.find(p => p.name === productName);
     if (product) {
       const itemForm = this.items.at(index);
       itemForm.patchValue({
         productName: product.name,
         description: product.description,
-        unitPrice: 0, // You might want to set a default price from product
-        productId: product.productId,
+        unitPrice: product.netPrice || 0,
+        productId: product.productId
       });
     }
+  }
+
+  getSelectedProduct(index: number): Product | undefined {
+    const itemForm = this.items.at(index);
+    const productId = itemForm.get('productId')?.value;
+    if (productId) {
+      return this.productOptions.find(p => p.productId === productId);
+    }
+    return undefined;
+  }
+
+  getVatAmount(index: number): number {
+    const product = this.getSelectedProduct(index);
+    if (product?.vatRate) {
+      const itemForm = this.items.at(index);
+      const totalPrice = itemForm.get('totalPrice')?.value || 0;
+      return Math.round(totalPrice * product.vatRate.rate * 1000) / 1000;
+    }
+    return 0;
+  }
+
+  getItemGrossTotal(index: number): number {
+    const itemForm = this.items.at(index);
+    const totalPrice = itemForm.get('totalPrice')?.value || 0;
+    const vatAmount = this.getVatAmount(index);
+    return Math.round((totalPrice + vatAmount) * 1000) / 1000;
+  }
+
+  getNetTotal(): number {
+    return this.items.controls.reduce((total, item) => {
+      return total + (item.get('totalPrice')?.value || 0);
+    }, 0);
+  }
+
+  getTotalVatAmount(): number {
+    return this.items.controls.reduce((total, item, index) => {
+      return total + this.getVatAmount(index);
+    }, 0);
+  }
+
+  getGrossTotal(): number {
+    return Math.round((this.getNetTotal() + this.getTotalVatAmount()) * 1000) / 1000;
   }
 
   getTotalAmount(): number {

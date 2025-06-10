@@ -29,7 +29,7 @@ export class QuoteItem extends BaseEntity {
     name: 'unit_price',
     type: 'decimal', 
     precision: 10, 
-    scale: 2,
+    scale: 3,
     default: 0
   })
   unitPrice!: number;
@@ -38,7 +38,7 @@ export class QuoteItem extends BaseEntity {
     name: 'total_price',
     type: 'decimal', 
     precision: 10, 
-    scale: 2,
+    scale: 3,
     default: 0
   })
   totalPrice!: number;
