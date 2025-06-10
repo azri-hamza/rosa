@@ -39,7 +39,11 @@ export class DeliveryNoteItem extends BaseEntity {
     precision: 10, 
     scale: 3,
     default: 0,
-    comment: 'Net unit price before VAT'
+    comment: 'Net unit price before VAT',
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => parseFloat(value),
+    }
   })
   unitPrice!: number;
 
@@ -49,7 +53,11 @@ export class DeliveryNoteItem extends BaseEntity {
     precision: 10, 
     scale: 3,
     default: 0,
-    comment: 'Net total price before VAT'
+    comment: 'Net total price before VAT',
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => parseFloat(value),
+    }
   })
   totalPrice!: number;
 
@@ -59,7 +67,11 @@ export class DeliveryNoteItem extends BaseEntity {
     precision: 5,
     scale: 4,
     nullable: true,
-    comment: 'VAT rate applied to this item (stored for historical purposes)'
+    comment: 'VAT rate applied to this item (stored for historical purposes)',
+    transformer: {
+      to: (value: number | null) => value,
+      from: (value: string | null) => value ? parseFloat(value) : null,
+    }
   })
   vatRate?: number;
 
@@ -69,7 +81,11 @@ export class DeliveryNoteItem extends BaseEntity {
     precision: 10,
     scale: 3,
     default: 0,
-    comment: 'VAT amount calculated'
+    comment: 'VAT amount calculated',
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => parseFloat(value),
+    }
   })
   vatAmount!: number;
 
@@ -79,7 +95,11 @@ export class DeliveryNoteItem extends BaseEntity {
     precision: 10,
     scale: 3,
     default: 0,
-    comment: 'Total price including VAT'
+    comment: 'Total price including VAT',
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => parseFloat(value),
+    }
   })
   grossTotalPrice!: number;
 

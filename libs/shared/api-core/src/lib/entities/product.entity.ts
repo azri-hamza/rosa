@@ -29,7 +29,11 @@ export class Product extends BaseEntity {
     precision: 10,
     scale: 3,
     nullable: true,
-    comment: 'Net price before VAT'
+    comment: 'Net price before VAT',
+    transformer: {
+      to: (value: number | null) => value,
+      from: (value: string | null) => value ? parseFloat(value) : null,
+    }
   })
   netPrice?: number;
 

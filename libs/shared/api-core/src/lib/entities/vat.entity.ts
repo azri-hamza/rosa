@@ -18,7 +18,11 @@ export class VatRate extends BaseEntity {
     precision: 5,
     scale: 4,
     nullable: false,
-    comment: 'VAT rate as decimal (e.g., 0.2000 for 20%)'
+    comment: 'VAT rate as decimal (e.g., 0.2000 for 20%)',
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => parseFloat(value),
+    }
   })
   rate!: number;
 
@@ -27,7 +31,11 @@ export class VatRate extends BaseEntity {
     precision: 5,
     scale: 2,
     nullable: false,
-    comment: 'VAT rate as percentage (e.g., 20.00 for 20%)'
+    comment: 'VAT rate as percentage (e.g., 20.00 for 20%)',
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => parseFloat(value),
+    }
   })
   percentage!: number;
 

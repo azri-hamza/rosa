@@ -30,7 +30,11 @@ export class QuoteItem extends BaseEntity {
     type: 'decimal', 
     precision: 10, 
     scale: 3,
-    default: 0
+    default: 0,
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => parseFloat(value),
+    }
   })
   unitPrice!: number;
 
@@ -39,7 +43,11 @@ export class QuoteItem extends BaseEntity {
     type: 'decimal', 
     precision: 10, 
     scale: 3,
-    default: 0
+    default: 0,
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => parseFloat(value),
+    }
   })
   totalPrice!: number;
 

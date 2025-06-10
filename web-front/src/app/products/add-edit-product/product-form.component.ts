@@ -45,8 +45,8 @@ export class ProductFormComponent implements OnInit {
     this.productForm = this.fb.group({
       name: [this.initialProduct?.name ?? '', [Validators.required]],
       description: [this.initialProduct?.description ?? '', [Validators.required]],
-      netPrice: [this.initialProduct?.netPrice ?? null],
-      vatRateId: [this.initialProduct?.vatRate?.id ?? null],
+      netPrice: [this.initialProduct?.netPrice ?? null, [Validators.required, Validators.min(0)]],
+      vatRateId: [null],  // Will be set after VAT rates are loaded
     });
 
     this.loadVatRates();
@@ -58,6 +58,13 @@ export class ProductFormComponent implements OnInit {
       next: (vatRates) => {
         this.vatRates = vatRates;
         this.loading = false;
+        
+        // Set the VAT rate after rates are loaded
+        if (this.initialProduct?.vatRate?.id) {
+          this.productForm.patchValue({
+            vatRateId: this.initialProduct.vatRate.id
+          });
+        }
       },
       error: (error) => {
         console.error('Error loading VAT rates:', error);
