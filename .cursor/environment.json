@@ -1,0 +1,18 @@
+{
+  "install": "pnpm install",
+  "start": "echo 'Environment ready for Rosa workspace'",
+  "terminals": [
+    {
+      "name": "API Server",
+      "command": "pnpm nx serve api"
+    },
+    {
+      "name": "Web Frontend",
+      "command": "pnpm nx serve web-front"
+    },
+    {
+      "name": "Database",
+      "command": "docker-compose -f docker-compose.postgres.yml up"
+    }
+  ]
+} 
