@@ -8,7 +8,7 @@
     "migration:generate": "pnpm run typeorm:base migration:generate",
     "migration:run": "pnpm run typeorm:base migration:run",
     "migration:revert": "pnpm run typeorm:base migration:revert",
-    "migration:create": "pnpm run typeorm:base migration:create"
+    "migration:create": "NODE_OPTIONS=--no-warnings ts-node -P ./libs/shared/api-core/tsconfig.json node_modules/typeorm/cli.js migration:create"
   },
   "private": true,
   "devDependencies": {
