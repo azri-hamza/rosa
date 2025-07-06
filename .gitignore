@@ -47,5 +47,6 @@ Thumbs.db
 .nx/workspace-data
 
 .angular
-.cursor/
+.cursor/rules/
+.cursor/mcp.json
 .github/instructions/nx.instructions.md
