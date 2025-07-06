@@ -2,13 +2,16 @@ import { BadRequestException, Inject, Injectable, NotFoundException } from '@nes
 import { Product, ProductRepository, PRODUCT_REPOSITORY, VatRate, CreateProductDto, UpdateProductDto } from '@rosa/api-core';
 import { IsNull } from 'typeorm';
 import { VatRateService } from '../vat/vat-rate.service';
+import { generateCacheKey } from '../../common/decorators/cacheable.decorator';
 
 @Injectable()
 export class ProductService {
   constructor(
     @Inject(PRODUCT_REPOSITORY)
     private readonly productRepository: ProductRepository,
-    @Inject(VatRateService) private readonly vatRateService: VatRateService
+    @Inject(VatRateService) private readonly vatRateService: VatRateService,
+    // Note: CACHE_MANAGER will be injected when packages are installed
+    // @Inject(CACHE_MANAGER) private cacheManager: Cache
   ) {}
   
   async findAll(
@@ -18,6 +21,16 @@ export class ProductService {
     sort = 'created_at',
     order: 'ASC' | 'DESC' = 'DESC'
   ): Promise<{ products: Product[]; total: number }> {
+    // Generate cache key for this query
+    const cacheKey = generateCacheKey('products:findAll', page, limit, filter, sort, order);
+    
+    // TODO: Uncomment when cache packages are installed
+    // Check cache first
+    // const cached = await this.cacheManager.get<{ products: Product[]; total: number }>(cacheKey);
+    // if (cached) {
+    //   return cached;
+    // }
+
     const queryBuilder = this.productRepository.createQueryBuilder('product')
       .leftJoinAndSelect('product.vatRate', 'vatRate');
     
@@ -54,8 +67,14 @@ export class ProductService {
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();
+
+    const result = { products, total };
+    
+    // TODO: Uncomment when cache packages are installed
+    // Cache the result for 5 minutes
+    // await this.cacheManager.set(cacheKey, result, 300);
       
-    return { products, total };
+    return result;
   }
 
   async findAllProducts(
@@ -117,7 +136,12 @@ export class ProductService {
       productCode: createProductDto.productCode || (await this.generateUniqueProductCode()),
     });
 
-    return this.productRepository.save(product);
+    const savedProduct = await this.productRepository.save(product);
+    
+    // Invalidate products cache after creation
+    await this.invalidateProductsCache();
+    
+    return savedProduct;
   }
 
   async updateProduct(product_id: string, updateProductDto: UpdateProductDto): Promise<Product> {
@@ -138,11 +162,21 @@ export class ProductService {
       vatRate: vatRate
     });
 
-    return this.productRepository.save(updatedProduct);
+    const savedProduct = await this.productRepository.save(updatedProduct);
+    
+    // Invalidate cache after update
+    await this.invalidateProductsCache();
+    await this.invalidateProductCache(product_id);
+    
+    return savedProduct;
   }
 
   async deleteProduct(product_id: string): Promise<void> {
     await this.productRepository.delete(product_id);
+    
+    // Invalidate cache after deletion
+    await this.invalidateProductsCache();
+    await this.invalidateProductCache(product_id);
   }
 
   // New method to restore a soft-deleted product
@@ -161,6 +195,29 @@ export class ProductService {
     }
     
     await this.productRepository.restore(productId);
+    
+    // Invalidate cache after restoration
+    await this.invalidateProductsCache();
+    
     return this.findProductById(productId);
+  }
+
+  // Cache management methods
+  private async invalidateProductsCache(): Promise<void> {
+    // TODO: Uncomment when cache packages are installed
+    // const keys = await this.cacheManager.store.keys('products:*');
+    // await Promise.all(keys.map(key => this.cacheManager.del(key)));
+    
+    // For now, just log that cache would be invalidated
+    console.log('Cache invalidation triggered for products');
+  }
+
+  private async invalidateProductCache(productId: string): Promise<void> {
+    // TODO: Uncomment when cache packages are installed
+    // const cacheKey = generateCacheKey('product', productId);
+    // await this.cacheManager.del(cacheKey);
+    
+    // For now, just log that cache would be invalidated
+    console.log(`Cache invalidation triggered for product: ${productId}`);
   }
 }

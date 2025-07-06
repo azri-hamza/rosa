@@ -17,6 +17,7 @@ import {
 import { ProductService } from './product.service';
 import { Product, CreateProductDto, UpdateProductDto, ProductResponseDto } from '@rosa/api-core';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { Cacheable } from '../../common/decorators/cacheable.decorator';
 
 @UseGuards(JwtAuthGuard)
 @Controller('products')
@@ -26,6 +27,7 @@ export class ProductController {
   ) {}
 
   @Get()
+  @Cacheable({ ttl: 300 }) // Cache for 5 minutes
   async getProducts(
     @Query('page', new DefaultValuePipe(1)) page: number,
     @Query('limit', new DefaultValuePipe(10)) limit: number,
@@ -62,6 +64,7 @@ export class ProductController {
   }
 
   @Get(':product_id')
+  @Cacheable({ ttl: 600 }) // Cache individual products for 10 minutes
   async getProductById(@Param('product_id') product_id: string): Promise<Product> {
     const product = await this.productService.findProductById(product_id);
     if (!product) {
