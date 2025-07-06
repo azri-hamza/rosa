@@ -1,14 +1,17 @@
-import { Controller, Get, Post, Body, Inject, Param, ParseUUIDPipe, Put, Delete, UseGuards, Query, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Inject, Param, ParseUUIDPipe, Put, Delete, UseGuards, Query, Request, Res } from '@nestjs/common';
+import { Response } from 'express';
 import { SalesService } from './sales.service';
 import { Quote, QuoteFilterDto, DeliveryNote, DeliveryNoteFilterDto } from '@rosa/api-core';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { CreateDeliveryNoteDto } from './dto/create-delivery-note.dto';
+import { PdfService } from './pdf.service';
 
 @Controller('sales')
 @UseGuards(JwtAuthGuard)
 export class SalesController {
   constructor(
-    @Inject(SalesService) private readonly salesService: SalesService
+    @Inject(SalesService) private readonly salesService: SalesService,
+    @Inject(PdfService) private readonly pdfService: PdfService
   ) {
     console.log('SalesService injected:', !!this.salesService);
   }
@@ -128,6 +131,31 @@ export class SalesController {
       return { message: 'Delivery note deleted successfully' };
     } catch (error) {
       console.error('Error in deleteDeliveryNote endpoint:', error);
+      throw error;
+    }
+  }
+
+  @Get('delivery-notes/:id/pdf')
+  async generateDeliveryNotePDF(
+    @Param('id', ParseUUIDPipe) id: string, 
+    @Request() req: any,
+    @Res() res: Response
+  ) {
+    try {
+      const deliveryNote = await this.salesService.getDeliveryNoteById(id, req.user.userId);
+      const pdfBuffer = await this.pdfService.generateDeliveryNotePDF(deliveryNote);
+      
+      const deliveryNoteNumber = `${deliveryNote.year}-${deliveryNote.sequenceNumber.toString().padStart(4, '0')}`;
+      
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename=delivery-note-${deliveryNoteNumber}.pdf`,
+        'Content-Length': pdfBuffer.length,
+      });
+      
+      res.send(pdfBuffer);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
       throw error;
     }
   }

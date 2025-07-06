@@ -11,7 +11,7 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzModalModule, NzModalService } from 'ng-zorro-antd/modal';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { NzTagModule } from 'ng-zorro-antd/tag';
-import { DeliveryNotesStore } from '@rosa/sales/data-access';
+import { DeliveryNotesStore, DeliveryNoteService } from '@rosa/sales/data-access';
 import { DeliveryNote } from '@rosa/types';
 import { Signal } from '@angular/core';
 import { DeliveryNoteFormComponent } from './delivery-note-form/delivery-note-form.component';
@@ -45,6 +45,7 @@ export class DeliveryNotesComponent {
   private store = inject(DeliveryNotesStore);
   private modal = inject(NzModalService);
   private message = inject(NzMessageService);
+  private deliveryNoteService = inject(DeliveryNoteService);
 
   deliveryNotes = this.store.deliveryNotes as unknown as Signal<DeliveryNote[]>;
   loading = this.store.loading as unknown as Signal<boolean>;
@@ -142,6 +143,27 @@ export class DeliveryNotesComponent {
             this.message.error(errorMessage);
           }
         });
+      }
+    });
+  }
+
+  printDeliveryNote(deliveryNote: DeliveryNote) {
+    this.deliveryNoteService.downloadDeliveryNotePDF(deliveryNote.referenceId).subscribe({
+      next: (response) => {
+        const blob = new Blob([response], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        const deliveryNoteNumber = `${deliveryNote.year}-${deliveryNote.sequenceNumber.toString().padStart(4, '0')}`;
+        link.download = `delivery-note-${deliveryNoteNumber}.pdf`;
+        link.click();
+        window.URL.revokeObjectURL(url);
+        this.message.success('PDF downloaded successfully');
+      },
+      error: (error) => {
+        console.error('Error downloading PDF:', error);
+        const errorMessage = error?.error?.message || error?.message || 'Failed to download PDF. Please try again.';
+        this.message.error(errorMessage);
       }
     });
   }

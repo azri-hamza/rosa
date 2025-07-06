@@ -62,6 +62,14 @@
             nz-button 
             nzType="link" 
             nzSize="small" 
+            (click)="printDeliveryNote(deliveryNote)"
+            title="Print PDF">
+            <span nz-icon nzType="printer"></span>
+          </button>
+          <button 
+            nz-button 
+            nzType="link" 
+            nzSize="small" 
             (click)="editDeliveryNote(deliveryNote)"
             title="Edit">
             <span nz-icon nzType="edit"></span>

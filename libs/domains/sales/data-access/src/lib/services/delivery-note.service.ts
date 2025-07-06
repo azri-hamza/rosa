@@ -52,4 +52,8 @@ export class DeliveryNoteService {
   deleteDeliveryNote(id: string) {
     return this.apiClient.delete(`sales/delivery-notes/${id}`);
   }
+
+  downloadDeliveryNotePDF(id: string) {
+    return this.apiClient.getBlob(`sales/delivery-notes/${id}/pdf`);
+  }
 } 

@@ -19,6 +19,7 @@ import {
   SearchOutline,
   ClearOutline,
   InboxOutline,
+  PrinterOutline,
 } from '@ant-design/icons-angular/icons';
 import { NZ_ICONS } from 'ng-zorro-antd/icon';
 import { provideApiClient } from '@rosa/api-client';
@@ -45,6 +46,7 @@ const icons = [
   SearchOutline,
   ClearOutline,
   InboxOutline,
+  PrinterOutline,
 ];
 
 export const appConfig: ApplicationConfig = {

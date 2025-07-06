@@ -32,6 +32,14 @@ export class ApiClient {
     return this.http.patch<T>(this.buildUrl(endpoint), body, options);
   }
 
+  // Special method for blob downloads (like PDFs)
+  getBlob(endpoint: string, options?: any) {
+    return this.http.get(this.buildUrl(endpoint), { 
+      ...options, 
+      responseType: 'blob' 
+    });
+  }
+
   private buildUrl(endpoint: string): string {
     return `${this.environment.apiUrl}/${endpoint}`;
   }

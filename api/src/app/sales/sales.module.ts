@@ -16,6 +16,7 @@ import { ProductService } from '../product/product.service';
 import { VatModule } from '../vat/vat.module';
 import { ProductModule } from '../product/product.module';
 import { ClientModule } from '../client/client.module';
+import { PdfService } from './pdf.service';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { ClientModule } from '../client/client.module';
   providers: [
     SalesService,
     ProductService,
+    PdfService,
     QuoteRepositoryProvider,
     DeliveryNoteRepositoryProvider,
     ProductRepositoryProvider,
