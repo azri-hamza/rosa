@@ -9,50 +9,19 @@ import {
   DELIVERY_NOTE_REPOSITORY,
   DeliveryNoteRepository,
   DeliveryNoteItem,
-  DeliveryNoteFilterDto
+  DeliveryNoteFilterDto,
+  User,
+  PRODUCT_REPOSITORY,
+  ProductRepository,
+  DeliveryNoteItemRepository,
+  DELIVERY_NOTE_ITEM_REPOSITORY,
 } from '@rosa/api-core';
 import { DataSource } from 'typeorm';
 import { ProductService } from '../product/product.service';
 import { ClientService } from '../client/client.service';
-
-
-// Interface for the incoming DTO
-interface CreateQuoteItemDto {
-  productName: string;
-  description?: string;
-  quantity: number;
-  unitPrice: number;
-  totalPrice?: number;
-  productId?: string;
-}
-
-interface CreateQuoteDto {
-  year?: number;
-  clientId?: number;
-  userDate?: Date | null;
-  items?: CreateQuoteItemDto[];
-}
-
-// Interface for delivery note DTOs
-interface CreateDeliveryNoteItemDto {
-  productName: string;
-  description?: string;
-  quantity: number;
-  deliveredQuantity?: number;
-  unitPrice: number;
-  totalPrice?: number;
-  productId?: string;
-}
-
-interface CreateDeliveryNoteDto {
-  year?: number;
-  clientId?: number;
-  deliveryDate?: Date;
-  deliveryAddress?: string;
-  notes?: string;
-  status?: 'pending' | 'delivered' | 'cancelled';
-  items?: CreateDeliveryNoteItemDto[];
-}
+import { CreateQuoteItemDto } from './dto/create-quote-item.dto';
+import { CreateQuoteDto } from './dto/create-quote.dto';
+import { CreateDeliveryNoteDto } from './dto/create-delivery-note.dto';
 
 @Injectable()
 export class SalesService {
@@ -61,7 +30,9 @@ export class SalesService {
     @Inject(DELIVERY_NOTE_REPOSITORY) private readonly deliveryNoteRepository: DeliveryNoteRepository,
     @Inject(DataSource) private readonly dataSource: DataSource,
     @Inject(ProductService) private readonly productService: ProductService,
-    @Inject(ClientService) private readonly clientService: ClientService
+    @Inject(ClientService) private readonly clientService: ClientService,
+    @Inject(PRODUCT_REPOSITORY) private readonly productRepository: ProductRepository,
+    @Inject(DELIVERY_NOTE_ITEM_REPOSITORY) private readonly deliveryNoteItemRepository: DeliveryNoteItemRepository
   ) {}
 
   private async getNextSequenceNumber(year: number | null): Promise<number> {
@@ -76,6 +47,20 @@ export class SalesService {
       .getMany();
 
     return quotes.length > 0 ? quotes[0].sequenceNumber + 1 : 1;
+  }
+
+  private async getNextDeliveryNoteSequenceNumber(year: number | null): Promise<number> {
+    if (!year) {
+      return 1;
+    }
+
+    const deliveryNotes = await this.deliveryNoteRepository
+      .createQueryBuilder('deliveryNote')
+      .where('deliveryNote.year = :year', { year })
+      .orderBy('deliveryNote.sequenceNumber', 'DESC')
+      .getMany();
+
+    return deliveryNotes.length > 0 ? deliveryNotes[0].sequenceNumber + 1 : 1;
   }
 
   async getQuoteById(quoteUuid: string): Promise<Quote> {
@@ -314,18 +299,44 @@ export class SalesService {
 
   // ===== DELIVERY NOTE METHODS =====
 
-  private async getNextDeliveryNoteSequenceNumber(year: number | null): Promise<number> {
-    if (!year) {
-      return 1;
-    }
+  private calculateItemPrices(item: Partial<DeliveryNoteItem>): {
+    discountAmount: number;
+    discountPercentage: number;
+    netUnitPrice: number;
+    grossUnitPrice: number;
+    totalPrice: number;
+    vatAmount: number;
+    grossTotalPrice: number;
+  } {
+    const quantity = Number(item.quantity) || 0;
+    const unitPrice = Number(item.unitPrice) || 0;
+    const discountPercentage = Number(item.discountPercentage) || 0;
+    const vatPercentage = Number(item.vatRate) || 0;
 
-    const deliveryNotes = await this.deliveryNoteRepository
-      .createQueryBuilder('deliveryNote')
-      .where('deliveryNote.year = :year', { year })
-      .orderBy('deliveryNote.sequenceNumber', 'DESC')
-      .getMany();
+    // Calculate discount amount based solely on discount percentage
+    const finalDiscountAmount = Math.round(unitPrice * (discountPercentage / 100) * 1000) / 1000;
+    const finalDiscountPercentage = discountPercentage;
 
-    return deliveryNotes.length > 0 ? deliveryNotes[0].sequenceNumber + 1 : 1;
+    // Calculate net unit price (after discount)
+    const netUnitPrice = Math.round((unitPrice - finalDiscountAmount) * 1000) / 1000;
+
+    // Calculate total price
+    const netTotal = Math.round(quantity * netUnitPrice * 1000) / 1000;
+
+    // Calculate VAT and gross prices
+    const grossUnitPrice = Math.round(netUnitPrice * (1 + vatPercentage / 100) * 1000) / 1000;
+    const vatAmount = Math.round(netTotal * (vatPercentage / 100) * 1000) / 1000;
+    const grossTotal = netTotal + vatAmount;
+
+    return {
+      discountAmount: finalDiscountAmount,
+      discountPercentage: finalDiscountPercentage,
+      netUnitPrice,
+      grossUnitPrice,
+      totalPrice: netTotal,
+      vatAmount,
+      grossTotalPrice: grossTotal,
+    };
   }
 
   async getDeliveryNoteById(deliveryNoteUuid: string, userId: string): Promise<DeliveryNote> {
@@ -397,215 +408,182 @@ export class SalesService {
     }
   }
 
-  async createDeliveryNote(createDeliveryNoteDto: CreateDeliveryNoteDto, userId: string): Promise<DeliveryNote> {
-    return await this.dataSource.transaction(async (transactionalEntityManager) => {
-      try {
-        console.log('createDeliveryNoteDto', createDeliveryNoteDto);
-        const items = createDeliveryNoteDto.items || [];
-        
-        // Validate delivery note items if they exist
-        for (const item of items) {
-          if (!item?.productName) {
-            throw new BadRequestException(
-              'Product name is required for delivery note items'
-            );
+  async createDeliveryNote(dto: CreateDeliveryNoteDto, userId: string): Promise<DeliveryNote> {
+    const { items = [], ...deliveryNoteData } = dto;
+
+    // Get the next sequence number
+    const year = dto.year ?? new Date().getFullYear();
+    const sequenceNumber = await this.getNextDeliveryNoteSequenceNumber(year);
+
+    // Fetch the user entity
+    const user = await this.dataSource.getRepository(User).findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    // Create delivery note with sequence number and user
+    const deliveryNote = this.deliveryNoteRepository.create({
+      ...deliveryNoteData,
+      year,
+      sequenceNumber,
+      createdByUser: user
+    });
+    const savedDeliveryNote = await this.deliveryNoteRepository.save(deliveryNote);
+
+    // Create items
+    const itemEntities = await Promise.all(
+      items.map(async (item) => {
+        let product = null;
+        if (item.productId && item.productId.trim() !== '') {
+          const productId = parseInt(item.productId);
+          if (!isNaN(productId)) {
+            product = await this.productRepository.findOne({ where: { id: productId } });
           }
-          item.quantity = Number(item.quantity) || 0;
-          item.deliveredQuantity = Number(item.deliveredQuantity) || 0;
-          item.unitPrice = Number(item.unitPrice) || 0;
-          item.totalPrice = Number(item.totalPrice) || (item.quantity * item.unitPrice);
         }
 
-        // Handle client assignment
-        let client = null;
-        if (createDeliveryNoteDto.clientId) {
-          try {
-            client = await this.clientService.findOne(createDeliveryNoteDto.clientId);
-          } catch (error) {
-            throw new BadRequestException(`Client with ID ${createDeliveryNoteDto.clientId} not found`);
-          }
-        }
-
-        // Get the user entity using the transactional manager
-        const user = await transactionalEntityManager.findOne('User', { where: { id: userId } });
-        if (!user) {
-          throw new BadRequestException(`User with ID ${userId} not found`);
-        }
-
-        const year = createDeliveryNoteDto.year ?? new Date().getFullYear();
-        const sequenceNumber = await this.getNextDeliveryNoteSequenceNumber(year);
-
-        // Create the delivery note entity without items first
-        const deliveryNote = this.deliveryNoteRepository.create({
-          ...createDeliveryNoteDto,
-          year,
-          sequenceNumber,
-          client,
-          createdByUser: user,
-          deliveryDate: createDeliveryNoteDto.deliveryDate || new Date(),
-          status: createDeliveryNoteDto.status || 'pending',
-          items: [],
+        // Calculate prices
+        const calculations = this.calculateItemPrices({
+          ...item,
+          id: 0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          deletedAt: null,
+          deliveryNote: savedDeliveryNote,
+          unitPrice: item.unitPrice,
         });
 
-        // Save the delivery note first using the transactional manager
-        const savedDeliveryNote = await transactionalEntityManager.save(deliveryNote);
+        return this.deliveryNoteItemRepository.create({
+          productName: item.productName,
+          description: item.description || '',
+          quantity: item.quantity,
+          deliveredQuantity: item.deliveredQuantity || 0,
+          unitPrice: item.unitPrice,
+          discountPercentage: calculations.discountPercentage,
+          discountAmount: calculations.discountAmount,
+          netUnitPrice: calculations.netUnitPrice,
+          grossUnitPrice: calculations.grossUnitPrice,
+          totalPrice: calculations.totalPrice,
+          vatRate: item.vatRate ? Number(item.vatRate) / 100 : undefined,
+          vatAmount: calculations.vatAmount,
+          grossTotalPrice: calculations.grossTotalPrice,
+          deliveryNote: savedDeliveryNote,
+          product: product
+        });
+      })
+    );
 
-        // If there are items, save them with the delivery note reference
-        if (items.length > 0) {
-          const deliveryNoteItems = await Promise.all(items.map(async (item: CreateDeliveryNoteItemDto) => {
-            let product = null;
-            let vatRate = 0;
-            let appliedVatRate = null;
-            
-            if (item.productId) {
-              try {
-                product = await this.productService.findProductById(item.productId);
-                // Use VAT rate from product if available
-                if (product?.vatRate) {
-                  vatRate = product.vatRate.rate;
-                  appliedVatRate = product.vatRate;
-                }
-              } catch (error) {
-                if (error instanceof NotFoundException) {
-                  throw new BadRequestException(`Product with ID ${item.productId} not found`);
-                }
-                throw error;
-              }
-            }
+    // Save items
+    const savedItems = await this.deliveryNoteItemRepository.save(itemEntities);
+    savedDeliveryNote.items = savedItems;
 
-            // Calculate VAT amounts
-            const netTotal = item.totalPrice || (item.quantity * item.unitPrice);
-            const vatAmount = Math.round(netTotal * vatRate * 1000) / 1000;
-            const grossTotal = Math.round((netTotal + vatAmount) * 1000) / 1000;
-
-            return {
-              productName: item.productName,
-              description: item.description || '',
-              quantity: item.quantity,
-              deliveredQuantity: item.deliveredQuantity || 0,
-              unitPrice: item.unitPrice,
-              totalPrice: netTotal,
-              vatRate: vatRate,
-              vatAmount: vatAmount,
-              grossTotalPrice: grossTotal,
-              deliveryNote: savedDeliveryNote,
-              product: product,
-              appliedVatRate: appliedVatRate
-            };
-          }));
-          
-          // Save items using the transactional manager
-          const savedItems = await transactionalEntityManager.save('DeliveryNoteItem', deliveryNoteItems);
-          savedDeliveryNote.items = savedItems as DeliveryNoteItem[];
-        }
-
-        return savedDeliveryNote;
-
-      } catch (error) {
-        console.error('Error in createDeliveryNote:', error);
-        throw error;
-      }
-    });
+    return savedDeliveryNote;
   }
 
-  async updateDeliveryNote(deliveryNoteUuid: string, updateDeliveryNoteDto: CreateDeliveryNoteDto, userId: string): Promise<DeliveryNote> {
-    return await this.dataSource.transaction(async (transactionalEntityManager) => {
-      try {
-        // Find the existing delivery note and verify ownership
-        const existingDeliveryNote = await this.deliveryNoteRepository
-          .createQueryBuilder('deliveryNote')
-          .leftJoinAndSelect('deliveryNote.createdByUser', 'createdByUser')
-          .where('deliveryNote.referenceId = :referenceId', { referenceId: deliveryNoteUuid })
-          .andWhere('deliveryNote.createdByUser.id = :userId', { userId })
-          .getOne();
+  async updateDeliveryNote(referenceId: string, dto: CreateDeliveryNoteDto): Promise<DeliveryNote> {
+    const { items = [], ...deliveryNoteData } = dto;
 
-        if (!existingDeliveryNote) {
-          throw new NotFoundException(`Delivery note with reference ID ${deliveryNoteUuid} not found or access denied`);
-        }
+    console.log('updateDeliveryNote - items received:', JSON.stringify(items, null, 2));
 
-        // Handle client assignment
-        let client = null;
-        if (updateDeliveryNoteDto.clientId) {
-          try {
-            client = await this.clientService.findOne(updateDeliveryNoteDto.clientId);
-          } catch (error) {
-            throw new BadRequestException(`Client with ID ${updateDeliveryNoteDto.clientId} not found`);
+    // Update delivery note
+    const deliveryNote = await this.deliveryNoteRepository.findOne({ 
+      where: { referenceId },
+      relations: ['items']
+    });
+
+    if (!deliveryNote) {
+      throw new NotFoundException(`Delivery note with reference ID "${referenceId}" not found`);
+    }
+
+    // Update delivery note data
+    Object.assign(deliveryNote, deliveryNoteData);
+    const savedDeliveryNote = await this.deliveryNoteRepository.save(deliveryNote);
+
+    // Delete removed items
+    const existingItemIds = deliveryNote.items.map(item => item.id);
+    const updatedItemIds = items
+      .map(item => item.id)
+      .filter(id => id !== undefined && id !== null)
+      .map(id => {
+        console.log(`Item ID: ${id}`);
+        return id;
+      });
+    const removedItemIds = existingItemIds.filter(id => !updatedItemIds.includes(id));
+
+    if (removedItemIds.length > 0) {
+      await this.deliveryNoteItemRepository.delete(removedItemIds);
+    }
+
+    // Update or create items
+    const itemEntities = await Promise.all(
+      items.map(async (item) => {
+        let product = null;
+        if (item.productId && item.productId.trim() !== '') {
+          const productId = parseInt(item.productId);
+          console.log(`Parsing product ID: "${item.productId}" -> ${productId}`);
+          if (!isNaN(productId)) {
+            product = await this.productRepository.findOne({ where: { id: productId } });
           }
         }
 
-        // Update basic delivery note properties
-        Object.assign(existingDeliveryNote, {
-          year: updateDeliveryNoteDto.year ?? existingDeliveryNote.year,
-          deliveryDate: updateDeliveryNoteDto.deliveryDate ?? existingDeliveryNote.deliveryDate,
-          deliveryAddress: updateDeliveryNoteDto.deliveryAddress !== undefined ? updateDeliveryNoteDto.deliveryAddress : existingDeliveryNote.deliveryAddress,
-          notes: updateDeliveryNoteDto.notes !== undefined ? updateDeliveryNoteDto.notes : existingDeliveryNote.notes,
-          status: updateDeliveryNoteDto.status ?? existingDeliveryNote.status,
-          client: client ?? existingDeliveryNote.client,
+        // Calculate prices
+        const itemId = item.id || 0;
+        console.log(`Item ID: ${itemId}`);
+        const calculations = this.calculateItemPrices({
+          ...item,
+          id: itemId,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          deletedAt: null,
+          deliveryNote: savedDeliveryNote,
+          unitPrice: item.unitPrice,
         });
 
-        // Save the updated delivery note using the transactional manager
-        const savedDeliveryNote = await transactionalEntityManager.save(existingDeliveryNote);
-
-        // If items are provided, update them
-        if (updateDeliveryNoteDto.items) {
-          // Remove existing items using the transactional manager
-          await transactionalEntityManager.delete('DeliveryNoteItem', { deliveryNote: { id: existingDeliveryNote.id } });
-
-          // Create new items
-          const deliveryNoteItems = await Promise.all(updateDeliveryNoteDto.items.map(async (item: CreateDeliveryNoteItemDto) => {
-            let product = null;
-            let vatRate = 0;
-            let appliedVatRate = null;
-            
-            if (item.productId) {
-              try {
-                product = await this.productService.findProductById(item.productId);
-                // Use VAT rate from product if available
-                if (product?.vatRate) {
-                  vatRate = product.vatRate.rate;
-                  appliedVatRate = product.vatRate;
-                }
-              } catch (error) {
-                if (error instanceof NotFoundException) {
-                  throw new BadRequestException(`Product with ID ${item.productId} not found`);
-                }
-                throw error;
-              }
-            }
-
-            // Calculate VAT amounts
-            const netTotal = item.totalPrice || (item.quantity * item.unitPrice);
-            const vatAmount = Math.round(netTotal * vatRate * 1000) / 1000;
-            const grossTotal = Math.round((netTotal + vatAmount) * 1000) / 1000;
-
-            return {
+        if (item.id && item.id > 0) {
+          const existingItem = await this.deliveryNoteItemRepository.findOne({ where: { id: item.id } });
+          if (existingItem) {
+            Object.assign(existingItem, {
               productName: item.productName,
               description: item.description || '',
               quantity: item.quantity,
               deliveredQuantity: item.deliveredQuantity || 0,
               unitPrice: item.unitPrice,
-              totalPrice: netTotal,
-              vatRate: vatRate,
-              vatAmount: vatAmount,
-              grossTotalPrice: grossTotal,
-              deliveryNote: savedDeliveryNote,
-              product: product,
-              appliedVatRate: appliedVatRate
-            };
-          }));
-          
-          // Save the new items using the transactional manager
-          const savedItems = await transactionalEntityManager.save('DeliveryNoteItem', deliveryNoteItems);
-          savedDeliveryNote.items = savedItems as DeliveryNoteItem[];
+              discountPercentage: calculations.discountPercentage,
+              discountAmount: calculations.discountAmount,
+              netUnitPrice: calculations.netUnitPrice,
+              grossUnitPrice: calculations.grossUnitPrice,
+              totalPrice: calculations.totalPrice,
+              vatRate: item.vatRate ? Number(item.vatRate) / 100 : undefined,
+              vatAmount: calculations.vatAmount,
+              grossTotalPrice: calculations.grossTotalPrice,
+              product: product
+            });
+            return existingItem;
+          }
         }
 
-        return savedDeliveryNote;
+        return this.deliveryNoteItemRepository.create({
+          productName: item.productName,
+          description: item.description || '',
+          quantity: item.quantity,
+          deliveredQuantity: item.deliveredQuantity || 0,
+          unitPrice: item.unitPrice, // Using netUnitPrice from DTO until DTO changes are propagated
+          discountPercentage: calculations.discountPercentage,
+          discountAmount: calculations.discountAmount,
+          netUnitPrice: calculations.netUnitPrice,
+          grossUnitPrice: calculations.grossUnitPrice,
+          totalPrice: calculations.totalPrice,
+          vatRate: item.vatRate ? Number(item.vatRate) / 100 : undefined,
+          vatAmount: calculations.vatAmount,
+          grossTotalPrice: calculations.grossTotalPrice,
+          deliveryNote: savedDeliveryNote,
+          product: product
+        });
+      })
+    );
 
-      } catch (error) {
-        console.error('Error in updateDeliveryNote:', error);
-        throw error;
-      }
-    });
+    // Save items
+    const savedItems = await this.deliveryNoteItemRepository.save(itemEntities);
+    savedDeliveryNote.items = savedItems;
+
+    return savedDeliveryNote;
   }
 
   async deleteDeliveryNote(deliveryNoteUuid: string, userId: string): Promise<void> {

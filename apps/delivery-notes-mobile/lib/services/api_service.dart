@@ -124,11 +124,23 @@ class ApiService {
                       itemMap['id'] = int.parse(itemMap['id']);
                     }
                     // Convert string numbers to doubles
-                    if (itemMap['unitPrice'] is String) {
-                      itemMap['unitPrice'] = double.parse(itemMap['unitPrice']);
+                    if (itemMap['netUnitPrice'] is String) {
+                      itemMap['netUnitPrice'] = double.parse(itemMap['netUnitPrice']);
+                    }
+                    if (itemMap['grossUnitPrice'] is String) {
+                      itemMap['grossUnitPrice'] = double.parse(itemMap['grossUnitPrice']);
                     }
                     if (itemMap['totalPrice'] is String) {
                       itemMap['totalPrice'] = double.parse(itemMap['totalPrice']);
+                    }
+                    if (itemMap['vatRate'] is String) {
+                      itemMap['vatRate'] = double.parse(itemMap['vatRate']);
+                    }
+                    if (itemMap['vatAmount'] is String) {
+                      itemMap['vatAmount'] = double.parse(itemMap['vatAmount']);
+                    }
+                    if (itemMap['grossTotalPrice'] is String) {
+                      itemMap['grossTotalPrice'] = double.parse(itemMap['grossTotalPrice']);
                     }
                     // Parse productName if it's a JSON string
                     if (itemMap['productName'] is String && itemMap['productName'].startsWith('{')) {

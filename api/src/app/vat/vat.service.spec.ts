@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { VatRateService, VatRateRepository } from '@rosa/api-core';
+import { VAT_RATE_REPOSITORY } from '@rosa/api-core';
+import { VatRateService } from './vat-rate.service';
 import { DataSource } from 'typeorm';
 
 describe('VatRateService', () => {
@@ -7,7 +8,7 @@ describe('VatRateService', () => {
 
   const mockRepository = {
     validateRateUniqueness: jest.fn(),
-    create: jest.fn(),
+    createEntity: jest.fn(),
     save: jest.fn(),
     setDefaultRate: jest.fn(),
     findWithFilters: jest.fn(),
@@ -15,6 +16,7 @@ describe('VatRateService', () => {
     findOne: jest.fn(),
     findActiveRates: jest.fn(),
     findDefaultRate: jest.fn(),
+    findEffectiveRate: jest.fn(),
     update: jest.fn(),
     softDelete: jest.fn(),
   };
@@ -28,7 +30,7 @@ describe('VatRateService', () => {
       providers: [
         VatRateService,
         {
-          provide: VatRateRepository,
+          provide: VAT_RATE_REPOSITORY,
           useValue: mockRepository,
         },
         {

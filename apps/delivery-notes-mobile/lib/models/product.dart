@@ -10,6 +10,8 @@ class Product {
   final String productCode;
   final String name;
   final String description;
+  final double? netPrice;
+  final double? vatRate;
 
   const Product({
     required this.id,
@@ -17,6 +19,8 @@ class Product {
     required this.productCode,
     required this.name,
     required this.description,
+    this.netPrice,
+    this.vatRate,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) => _$ProductFromJson(json);

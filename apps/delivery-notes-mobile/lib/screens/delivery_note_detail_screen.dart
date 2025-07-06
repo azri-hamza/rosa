@@ -340,12 +340,38 @@ class _DeliveryNoteDetailScreenState extends State<DeliveryNoteDetailScreen> {
           Row(
             children: [
               Expanded(
-                child: _buildItemDetail('Unit Price', currencyFormat.format(item.unitPrice)),
+                child: _buildItemDetail('Net Unit Price', currencyFormat.format(item.netUnitPrice)),
+              ),
+              Expanded(
+                child: _buildItemDetail('VAT Rate', '${(item.vatRate ?? 0).toStringAsFixed(1)}%'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Expanded(
+                child: _buildItemDetail('Gross Unit Price', currencyFormat.format(item.grossUnitPrice)),
+              ),
+              Expanded(
+                child: _buildItemDetail('VAT Amount', currencyFormat.format(item.vatAmount)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Expanded(
+                child: _buildItemDetail(
+                  'Net Total',
+                  currencyFormat.format(item.totalPrice),
+                  valueColor: Colors.blue.shade700,
+                ),
               ),
               Expanded(
                 child: _buildItemDetail(
-                  'Total',
-                  currencyFormat.format(item.totalPrice),
+                  'Gross Total',
+                  currencyFormat.format(item.grossTotalPrice),
                   valueColor: Colors.green.shade700,
                 ),
               ),

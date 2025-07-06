@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Inject, Param, ParseUUIDPipe, Put, Delete,
 import { SalesService } from './sales.service';
 import { Quote, QuoteFilterDto, DeliveryNote, DeliveryNoteFilterDto } from '@rosa/api-core';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { CreateDeliveryNoteDto } from './dto/create-delivery-note.dto';
 
 @Controller('sales')
 @UseGuards(JwtAuthGuard)
@@ -95,7 +96,7 @@ export class SalesController {
   }
 
   @Post('delivery-notes')
-  async createDeliveryNote(@Body() createDeliveryNoteDto: any, @Request() req: any) {
+  async createDeliveryNote(@Body() createDeliveryNoteDto: CreateDeliveryNoteDto, @Request() req: any) {
     try {
       const newDeliveryNote = await this.salesService.createDeliveryNote(createDeliveryNoteDto, req.user.userId);
       return this.formatDeliveryNoteResponse(newDeliveryNote);
@@ -112,7 +113,7 @@ export class SalesController {
     @Request() req: any
   ) {
     try {
-      const updatedDeliveryNote = await this.salesService.updateDeliveryNote(id, updateDeliveryNoteDto, req.user.userId);
+      const updatedDeliveryNote = await this.salesService.updateDeliveryNote(id, updateDeliveryNoteDto);
       return this.formatDeliveryNoteResponse(updatedDeliveryNote);
     } catch (error) {
       console.error('Error updating delivery note:', error);
@@ -195,10 +196,17 @@ export class SalesController {
       id: typeof item.id === 'string' ? parseInt(item.id, 10) : Number(item.id),
       productName: item.productName,
       description: item.description,
-      quantity: this.parseNumeric(item.quantity, 'int'),
-      deliveredQuantity: this.parseNumeric(item.deliveredQuantity, 'int'),
-      unitPrice: this.parseNumeric(item.unitPrice, 'decimal'),
-      totalPrice: this.parseNumeric(item.totalPrice, 'decimal'),
+      quantity: item.quantity,
+      deliveredQuantity: item.deliveredQuantity,
+      unitPrice: item.unitPrice,
+      discountAmount: item.discountAmount,
+      discountPercentage: item.discountPercentage,
+      netUnitPrice: item.netUnitPrice,
+      vatRate: item.vatRate ? Number(item.vatRate) * 100 : undefined,
+      grossUnitPrice: item.grossUnitPrice,
+      totalPrice:item.totalPrice,
+      grossTotalPrice: item.grossTotalPrice,
+      vatAmount: item.vatAmount,
       productId: item.product?.productId || null,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt

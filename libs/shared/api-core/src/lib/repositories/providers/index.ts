@@ -5,3 +5,4 @@ export * from './product.repository.provider';
 export * from './delivery-note.repository.provider';
 export * from './delivery-note-item.repository.provider';
 export * from './vat-rate.repository.provider';
+export * from './client.repository.provider';

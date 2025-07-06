@@ -5,26 +5,44 @@ part 'delivery_note.g.dart';
 
 @JsonSerializable()
 class DeliveryNoteItem {
-  @JsonKey(fromJson: _parseId)
-  final int id;
-  @JsonKey(fromJson: _parseProductName)
+  final String id;
   final String productName;
-  final String? description;
-  final double quantity;
-  final double deliveredQuantity;
+  final String description;
+  final int quantity;
+  final int deliveredQuantity;
   final double unitPrice;
+  final double? discountPercentage;
+  final double? discountAmount;
+  final double? netUnitPrice;
+  final double grossUnitPrice;
   final double totalPrice;
+  final double? vatRate;
+  final double vatAmount;
+  final double grossTotalPrice;
   final String? productId;
+  final String deliveryNoteId;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
   DeliveryNoteItem({
     required this.id,
     required this.productName,
-    this.description,
+    required this.description,
     required this.quantity,
     required this.deliveredQuantity,
     required this.unitPrice,
+    this.discountPercentage,
+    this.discountAmount,
+    this.netUnitPrice,
+    required this.grossUnitPrice,
     required this.totalPrice,
+    this.vatRate,
+    required this.vatAmount,
+    required this.grossTotalPrice,
     this.productId,
+    required this.deliveryNoteId,
+    required this.createdAt,
+    required this.updatedAt,
   });
 
   factory DeliveryNoteItem.fromJson(Map<String, dynamic> json) => _$DeliveryNoteItemFromJson(json);
@@ -133,8 +151,12 @@ class CreateDeliveryNoteItemRequest {
   final String? description;
   final double quantity;
   final double? deliveredQuantity;
-  final double unitPrice;
+  final double netUnitPrice;
+  final double? grossUnitPrice;
   final double? totalPrice;
+  final double? vatRate;
+  final double? vatAmount;
+  final double? grossTotalPrice;
   final String? productId;
 
   CreateDeliveryNoteItemRequest({
@@ -142,8 +164,12 @@ class CreateDeliveryNoteItemRequest {
     this.description,
     required this.quantity,
     this.deliveredQuantity,
-    required this.unitPrice,
+    required this.netUnitPrice,
+    this.grossUnitPrice,
     this.totalPrice,
+    this.vatRate,
+    this.vatAmount,
+    this.grossTotalPrice,
     this.productId,
   });
 

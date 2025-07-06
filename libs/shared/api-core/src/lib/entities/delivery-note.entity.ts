@@ -58,6 +58,66 @@ export class DeliveryNote extends BaseEntity {
   })
   status!: 'pending' | 'delivered' | 'cancelled';
 
+  @Column({
+    name: 'global_discount_percentage',
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    nullable: true,
+    default: 0,
+    comment: 'Global discount percentage applied to net total',
+    transformer: {
+      to: (value: number | null) => value,
+      from: (value: string | null) => value ? parseFloat(value) : null,
+    }
+  })
+  globalDiscountPercentage?: number;
+
+  @Column({
+    name: 'global_discount_amount',
+    type: 'decimal',
+    precision: 10,
+    scale: 3,
+    nullable: true,
+    default: 0,
+    comment: 'Global discount amount',
+    transformer: {
+      to: (value: number | null) => value,
+      from: (value: string | null) => value ? parseFloat(value) : null,
+    }
+  })
+  globalDiscountAmount?: number;
+
+  @Column({
+    name: 'net_total_before_global_discount',
+    type: 'decimal',
+    precision: 10,
+    scale: 3,
+    nullable: true,
+    default: 0,
+    comment: 'Net total before global discount',
+    transformer: {
+      to: (value: number | null) => value,
+      from: (value: string | null) => value ? parseFloat(value) : null,
+    }
+  })
+  netTotalBeforeGlobalDiscount?: number;
+
+  @Column({
+    name: 'net_total_after_global_discount',
+    type: 'decimal',
+    precision: 10,
+    scale: 3,
+    nullable: true,
+    default: 0,
+    comment: 'Net total after global discount',
+    transformer: {
+      to: (value: number | null) => value,
+      from: (value: string | null) => value ? parseFloat(value) : null,
+    }
+  })
+  netTotalAfterGlobalDiscount?: number;
+
   @ManyToOne(() => Client, { nullable: true, eager: false })
   @JoinColumn({ 
     name: 'client_id',

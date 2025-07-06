@@ -58,7 +58,8 @@ class _CreateDeliveryNoteScreenState extends State<CreateDeliveryNoteScreen> {
       _items.add(CreateDeliveryNoteItemRequest(
         productName: '',
         quantity: 1.0,
-        unitPrice: 0.0,
+        netUnitPrice: 0.0,
+        vatRate: 0.0,
       ));
     });
   }
@@ -77,8 +78,16 @@ class _CreateDeliveryNoteScreenState extends State<CreateDeliveryNoteScreen> {
     });
   }
 
-  double get _totalAmount {
-    return _items.fold(0.0, (sum, item) => sum + (item.totalPrice ?? (item.quantity * item.unitPrice)));
+  double get _netTotalAmount {
+    return _items.fold(0.0, (sum, item) => sum + (item.totalPrice ?? (item.quantity * item.netUnitPrice)));
+  }
+
+  double get _totalVatAmount {
+    return _items.fold(0.0, (sum, item) => sum + (item.vatAmount ?? 0.0));
+  }
+
+  double get _grossTotalAmount {
+    return _items.fold(0.0, (sum, item) => sum + (item.grossTotalPrice ?? (item.totalPrice ?? (item.quantity * item.netUnitPrice))));
   }
 
   Future<void> _selectDeliveryDate() async {
@@ -378,26 +387,66 @@ class _CreateDeliveryNoteScreenState extends State<CreateDeliveryNoteScreen> {
                             
                             const SizedBox(height: 16),
                             
-                            // Total Amount
+                            // Total Amount Summary
                             Container(
-                              padding: const EdgeInsets.all(12),
+                              padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
                                 color: Colors.grey.shade100,
                                 borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey.shade300),
                               ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              child: Column(
                                 children: [
-                                  Text(
-                                    'Total Amount:',
-                                    style: Theme.of(context).textTheme.titleMedium,
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'Net Total:',
+                                        style: Theme.of(context).textTheme.bodyMedium,
+                                      ),
+                                      Text(
+                                        '\$${_netTotalAmount.toStringAsFixed(3)}',
+                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  Text(
-                                    '\$${_totalAmount.toStringAsFixed(2)}',
-                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.blue,
-                                    ),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'VAT Total:',
+                                        style: Theme.of(context).textTheme.bodyMedium,
+                                      ),
+                                      Text(
+                                        '\$${_totalVatAmount.toStringAsFixed(3)}',
+                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.orange.shade700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const Divider(),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'Gross Total:',
+                                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      Text(
+                                        '\$${_grossTotalAmount.toStringAsFixed(3)}',
+                                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.green.shade700,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),

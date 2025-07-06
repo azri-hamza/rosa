@@ -16,4 +16,8 @@ export interface DeliveryNote {
   items: DeliveryNoteItem[];
   totalAmount: number;
   itemCount: number;
+  globalDiscountPercentage?: number;
+  globalDiscountAmount?: number;
+  netTotalBeforeGlobalDiscount?: number;
+  netTotalAfterGlobalDiscount?: number;
 } 

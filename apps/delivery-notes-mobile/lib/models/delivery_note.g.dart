@@ -8,14 +8,24 @@ part of 'delivery_note.dart';
 
 DeliveryNoteItem _$DeliveryNoteItemFromJson(Map<String, dynamic> json) =>
     DeliveryNoteItem(
-      id: DeliveryNoteItem._parseId(json['id']),
-      productName: DeliveryNoteItem._parseProductName(json['productName']),
-      description: json['description'] as String?,
-      quantity: (json['quantity'] as num).toDouble(),
-      deliveredQuantity: (json['deliveredQuantity'] as num).toDouble(),
+      id: json['id'] as String,
+      productName: json['productName'] as String,
+      description: json['description'] as String,
+      quantity: json['quantity'] as int,
+      deliveredQuantity: json['deliveredQuantity'] as int,
       unitPrice: (json['unitPrice'] as num).toDouble(),
+      discountPercentage: (json['discountPercentage'] as num?)?.toDouble(),
+      discountAmount: (json['discountAmount'] as num?)?.toDouble(),
+      netUnitPrice: (json['netUnitPrice'] as num?)?.toDouble(),
+      grossUnitPrice: (json['grossUnitPrice'] as num).toDouble(),
       totalPrice: (json['totalPrice'] as num).toDouble(),
+      vatRate: (json['vatRate'] as num?)?.toDouble(),
+      vatAmount: (json['vatAmount'] as num).toDouble(),
+      grossTotalPrice: (json['grossTotalPrice'] as num).toDouble(),
       productId: json['productId'] as String?,
+      deliveryNoteId: json['deliveryNoteId'] as String,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
 
 Map<String, dynamic> _$DeliveryNoteItemToJson(DeliveryNoteItem instance) =>
@@ -26,8 +36,18 @@ Map<String, dynamic> _$DeliveryNoteItemToJson(DeliveryNoteItem instance) =>
       'quantity': instance.quantity,
       'deliveredQuantity': instance.deliveredQuantity,
       'unitPrice': instance.unitPrice,
+      'discountPercentage': instance.discountPercentage,
+      'discountAmount': instance.discountAmount,
+      'netUnitPrice': instance.netUnitPrice,
+      'grossUnitPrice': instance.grossUnitPrice,
       'totalPrice': instance.totalPrice,
+      'vatRate': instance.vatRate,
+      'vatAmount': instance.vatAmount,
+      'grossTotalPrice': instance.grossTotalPrice,
       'productId': instance.productId,
+      'deliveryNoteId': instance.deliveryNoteId,
+      'createdAt': instance.createdAt.toIso8601String(),
+      'updatedAt': instance.updatedAt.toIso8601String(),
     };
 
 DeliveryNote _$DeliveryNoteFromJson(Map<String, dynamic> json) => DeliveryNote(
@@ -105,8 +125,12 @@ CreateDeliveryNoteItemRequest _$CreateDeliveryNoteItemRequestFromJson(
       description: json['description'] as String?,
       quantity: (json['quantity'] as num).toDouble(),
       deliveredQuantity: (json['deliveredQuantity'] as num?)?.toDouble(),
-      unitPrice: (json['unitPrice'] as num).toDouble(),
+      netUnitPrice: (json['netUnitPrice'] as num).toDouble(),
+      grossUnitPrice: (json['grossUnitPrice'] as num?)?.toDouble(),
       totalPrice: (json['totalPrice'] as num?)?.toDouble(),
+      vatRate: (json['vatRate'] as num?)?.toDouble(),
+      vatAmount: (json['vatAmount'] as num?)?.toDouble(),
+      grossTotalPrice: (json['grossTotalPrice'] as num?)?.toDouble(),
       productId: json['productId'] as String?,
     );
 
@@ -117,7 +141,11 @@ Map<String, dynamic> _$CreateDeliveryNoteItemRequestToJson(
       'description': instance.description,
       'quantity': instance.quantity,
       'deliveredQuantity': instance.deliveredQuantity,
-      'unitPrice': instance.unitPrice,
+      'netUnitPrice': instance.netUnitPrice,
+      'grossUnitPrice': instance.grossUnitPrice,
       'totalPrice': instance.totalPrice,
+      'vatRate': instance.vatRate,
+      'vatAmount': instance.vatAmount,
+      'grossTotalPrice': instance.grossTotalPrice,
       'productId': instance.productId,
     };

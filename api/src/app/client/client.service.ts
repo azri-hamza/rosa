@@ -1,14 +1,13 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like } from 'typeorm';
-import { Client, CreateClientDto, UpdateClientDto, PaginationDto, Quote } from '@rosa/api-core';
+import { Injectable, BadRequestException, NotFoundException, Inject } from '@nestjs/common';
+import { Like } from 'typeorm';
+import { Client, CreateClientDto, UpdateClientDto, PaginationDto, Quote, ClientRepository, CLIENT_REPOSITORY } from '@rosa/api-core';
 import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class ClientService {
   constructor(
-    @InjectRepository(Client)
-    private readonly clientRepository: Repository<Client>,
+    @Inject(CLIENT_REPOSITORY)
+    private readonly clientRepository: ClientRepository,
   ) {}
 
   async create(createClientDto: CreateClientDto): Promise<Client> {

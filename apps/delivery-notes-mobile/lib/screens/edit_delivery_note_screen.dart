@@ -49,8 +49,12 @@ class _EditDeliveryNoteScreenState extends State<EditDeliveryNoteScreen> {
       description: item.description,
       quantity: item.quantity,
       deliveredQuantity: item.deliveredQuantity,
-      unitPrice: item.unitPrice,
+      netUnitPrice: item.netUnitPrice,
+      grossUnitPrice: item.grossUnitPrice,
       totalPrice: item.totalPrice,
+      vatRate: item.vatRate,
+      vatAmount: item.vatAmount,
+      grossTotalPrice: item.grossTotalPrice,
       productId: item.productId,
     )).toList();
     
@@ -106,7 +110,8 @@ class _EditDeliveryNoteScreenState extends State<EditDeliveryNoteScreen> {
       _items.add(CreateDeliveryNoteItemRequest(
         productName: '',
         quantity: 1.0,
-        unitPrice: 0.0,
+        netUnitPrice: 0.0,
+        vatRate: 0.0,
       ));
     });
   }
@@ -121,6 +126,18 @@ class _EditDeliveryNoteScreenState extends State<EditDeliveryNoteScreen> {
     setState(() {
       _items[index] = item;
     });
+  }
+
+  double get _netTotalAmount {
+    return _items.fold(0.0, (sum, item) => sum + (item.totalPrice ?? (item.quantity * item.netUnitPrice)));
+  }
+
+  double get _totalVatAmount {
+    return _items.fold(0.0, (sum, item) => sum + (item.vatAmount ?? 0.0));
+  }
+
+  double get _grossTotalAmount {
+    return _items.fold(0.0, (sum, item) => sum + (item.grossTotalPrice ?? (item.totalPrice ?? (item.quantity * item.netUnitPrice))));
   }
 
   void _selectDate() async {
@@ -264,6 +281,10 @@ class _EditDeliveryNoteScreenState extends State<EditDeliveryNoteScreen> {
                         
                         // Items section
                         _buildItemsSection(),
+                        const SizedBox(height: 20),
+                        
+                        // Total Amount Summary
+                        _buildTotalSection(),
                         const SizedBox(height: 20),
                         
                         // Notes section
@@ -494,6 +515,89 @@ class _EditDeliveryNoteScreenState extends State<EditDeliveryNoteScreen> {
                   ],
                 ),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTotalSection() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Total Summary',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Net Total:',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      Text(
+                        '\$${_netTotalAmount.toStringAsFixed(3)}',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'VAT Total:',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      Text(
+                        '\$${_totalVatAmount.toStringAsFixed(3)}',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w500,
+                          color: Colors.orange.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Divider(),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Gross Total:',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        '\$${_grossTotalAmount.toStringAsFixed(3)}',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),

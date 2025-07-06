@@ -46,6 +46,23 @@ export const DeliveryNotesStore = signalStore(
       );
     },
 
+    loadDeliveryNote(referenceId: string): Observable<DeliveryNote> {
+      patchState(store, { loading: true });
+      
+      return deliveryNoteService.getDeliveryNote(referenceId).pipe(
+        tap((deliveryNote) => {
+          patchState(store, { 
+            selectedDeliveryNote: deliveryNote,
+            loading: false 
+          });
+        }),
+        catchError((error) => {
+          patchState(store, { loading: false });
+          return throwError(() => error);
+        })
+      );
+    },
+
     setFilters(filters: DeliveryNoteFilters): void {
       patchState(store, { filters });
       this.loadDeliveryNotes(filters).subscribe();

@@ -35,8 +35,19 @@ export class ProductService {
       throw new BadRequestException('Invalid order value. Use ASC or DESC.');
     }
 
+    // Map sort fields to their actual column names to avoid TypeORM column resolution issues
+    const sortFieldMap: Record<string, string> = {
+      'created_at': 'product.createdAt',
+      'updated_at': 'product.updatedAt',
+      'name': 'product.name',
+      'product_code': 'product.productCode',
+      'net_price': 'product.netPrice',
+      'description': 'product.description'
+    };
+
     if (sort) {
-      queryBuilder.orderBy(`product.${sort}`, order);
+      const mappedSort = sortFieldMap[sort] || `product.${sort}`;
+      queryBuilder.orderBy(mappedSort, order);
     }
     
     const [products, total] = await queryBuilder

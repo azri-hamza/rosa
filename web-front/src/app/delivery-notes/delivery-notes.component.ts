@@ -110,7 +110,19 @@ export class DeliveryNotesComponent {
   }
 
   editDeliveryNote(deliveryNote: DeliveryNote) {
-    this.openDeliveryNoteForm(deliveryNote);
+    // Fetch the complete delivery note data before opening the form
+    this.store.loadDeliveryNote(deliveryNote.referenceId).subscribe({
+      next: (completeDeliveryNote) => {
+        this.openDeliveryNoteForm(completeDeliveryNote);
+      },
+      error: (error) => {
+        console.error('Error loading delivery note:', error);
+        const errorMessage = error?.error?.message || error?.message || 'Failed to load delivery note. Please try again.';
+        this.message.error(errorMessage);
+        // Fallback to using the delivery note from the list
+        this.openDeliveryNoteForm(deliveryNote);
+      }
+    });
   }
 
   deleteDeliveryNote(deliveryNote: DeliveryNote) {
