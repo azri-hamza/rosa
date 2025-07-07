@@ -9,9 +9,10 @@ This document explains how to set up and use the caching layer that has been imp
 First, install the required packages:
 
 ```bash
-pnpm add -w @nestjs/cache-manager cache-manager cache-manager-redis-store redis
-pnpm add -w -D @types/cache-manager-redis-store
+pnpm add -w @nestjs/cache-manager cache-manager keyv @keyv/redis ioredis
 ```
+
+**Note**: We're using the modern cache-manager v6 approach with Keyv. This eliminates the need for deprecated store packages like `cache-manager-ioredis-yet` or `cache-manager-redis-yet`. The Keyv ecosystem provides universal storage adapters that work seamlessly with cache-manager v6. Also, `@types/ioredis` is no longer needed as ioredis provides its own TypeScript definitions.
 
 ## Configuration
 
@@ -29,6 +30,8 @@ REDIS_DB=0                  # Redis database number
 CACHE_TTL=300               # Default cache TTL in seconds (5 minutes)
 CACHE_MAX_ITEMS=100         # Maximum items in memory cache
 ```
+
+**Note**: The modern approach uses `REDIS_URL` for connection, which supports all Redis configurations including authentication, database selection, and connection options in a single URL format.
 
 ### Module Setup
 
