@@ -50,7 +50,3 @@ Thumbs.db
 .cursor/rules/
 .cursor/mcp.json
 .github/instructions/nx.instructions.md
-
-# Large archive files
-flutter.tar.xz
-*.tar.xz
