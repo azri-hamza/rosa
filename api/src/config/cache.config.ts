@@ -9,23 +9,10 @@ export const CacheConfigModule = CacheModule.registerAsync({
     if (isRedisEnabled) {
       // Modern cache-manager v6 approach using Keyv with Redis
       const { Keyv } = await import('keyv');
-      const { KeyvRedis } = await import('@keyv/redis');
+      const KeyvRedis = (await import('@keyv/redis')).default;
       
-      const keyvRedis = new KeyvRedis({
-        host: configService.get('REDIS_HOST', 'localhost'),
-        port: configService.get('REDIS_PORT', 6379),
-        password: configService.get('REDIS_PASSWORD'),
-        db: configService.get('REDIS_DB', 0),
-        // IORedis specific optimizations
-        retryDelayOnFailover: 100,
-        enableReadyCheck: false,
-        maxRetriesPerRequest: 3,
-        lazyConnect: true,
-        keepAlive: 30000,
-        family: 4,
-        connectTimeout: 10000,
-        commandTimeout: 5000,
-      });
+      const redisUrl = `redis://${configService.get('REDIS_PASSWORD') ? `:${configService.get('REDIS_PASSWORD')}@` : ''}${configService.get('REDIS_HOST', 'localhost')}:${configService.get('REDIS_PORT', 6379)}/${configService.get('REDIS_DB', 0)}`;
+      const keyvRedis = new KeyvRedis(redisUrl);
 
       return {
         store: new Keyv({ store: keyvRedis }),
