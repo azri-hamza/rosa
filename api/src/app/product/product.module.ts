@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Product, ProductRepositoryProvider } from '@rosa/api-core';
-import { ProductController } from './product.controller';
 import { ProductService } from './product.service';
 import { VatModule } from '../vat/vat.module';
 
@@ -11,7 +10,7 @@ import { VatModule } from '../vat/vat.module';
     TypeOrmModule.forFeature([Product]),
     VatModule,
   ],
-  controllers: [ProductController],
+  controllers: [],
   providers: [
     ProductService,
     ProductRepositoryProvider,

@@ -10,7 +10,6 @@ import {
   DeliveryNoteItemRepositoryProvider,
   VatRateRepositoryProvider,
 } from '@rosa/api-core';
-import { SalesController } from './sales.controller';
 import { SalesService } from './sales.service';
 import { ProductService } from '../product/product.service';
 import { VatModule } from '../vat/vat.module';
@@ -25,7 +24,7 @@ import { PdfService } from './pdf.service';
     ProductModule,
     ClientModule,
   ],
-  controllers: [SalesController],
+  controllers: [],
   providers: [
     SalesService,
     ProductService,

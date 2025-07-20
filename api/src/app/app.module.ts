@@ -10,6 +10,7 @@ import { ClientModule } from './client/client.module';
 import { AuthModule } from '../auth/auth.module';
 import { HealthModule } from './health/health.module';
 import { VatModule } from './vat/vat.module';
+import { V1Module } from './v1/v1.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { VatModule } from './vat/vat.module';
     AuthModule,
     HealthModule,
     VatModule,
+    V1Module,
   ],
 })
 export class AppModule {}

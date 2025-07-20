@@ -2,7 +2,7 @@ import { BadRequestException, Inject, Injectable, NotFoundException } from '@nes
 import { Product, ProductRepository, PRODUCT_REPOSITORY, VatRate, CreateProductDto, UpdateProductDto } from '@rosa/api-core';
 import { IsNull } from 'typeorm';
 import { VatRateService } from '../vat/vat-rate.service';
-import { generateCacheKey } from '../../common/decorators/cacheable.decorator';
+// import { generateCacheKey } from '../../common/decorators/cacheable.decorator';
 
 @Injectable()
 export class ProductService {
@@ -22,7 +22,7 @@ export class ProductService {
     order: 'ASC' | 'DESC' = 'DESC'
   ): Promise<{ products: Product[]; total: number }> {
     // Generate cache key for this query
-    const cacheKey = generateCacheKey('products:findAll', page, limit, filter, sort, order);
+    // const cacheKey = generateCacheKey('products:findAll', page, limit, filter, sort, order);
     
     // TODO: Uncomment when cache packages are installed
     // Check cache first

@@ -71,6 +71,7 @@ export class DeliveryNotesComponent {
   }
 
   openDeliveryNoteForm(deliveryNote?: DeliveryNote) {
+    console.log('deliveryNote', deliveryNote);
     this.modal
       .create({
         nzTitle: deliveryNote ? 'Edit Delivery Note' : 'New Delivery Note',

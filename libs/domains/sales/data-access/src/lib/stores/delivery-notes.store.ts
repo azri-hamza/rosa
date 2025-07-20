@@ -32,6 +32,7 @@ export const DeliveryNotesStore = signalStore(
       patchState(store, { loading: true });
       
       return deliveryNoteService.getDeliveryNotes(filters).pipe(
+        map(response => response.data),
         tap((deliveryNotes) => {
           patchState(store, { 
             deliveryNotes, 
@@ -50,6 +51,7 @@ export const DeliveryNotesStore = signalStore(
       patchState(store, { loading: true });
       
       return deliveryNoteService.getDeliveryNote(referenceId).pipe(
+        map(response => response.data),
         tap((deliveryNote) => {
           patchState(store, { 
             selectedDeliveryNote: deliveryNote,
@@ -72,6 +74,7 @@ export const DeliveryNotesStore = signalStore(
       patchState(store, { loading: true });
       
       return deliveryNoteService.createDeliveryNote(deliveryNote).pipe(
+        map(response => response.data),
         tap((newDeliveryNote) => {
           patchState(store, { 
             deliveryNotes: [newDeliveryNote, ...store.deliveryNotes()],
@@ -89,6 +92,7 @@ export const DeliveryNotesStore = signalStore(
       patchState(store, { loading: true });
       
       return deliveryNoteService.updateDeliveryNote(deliveryNote.referenceId, deliveryNote).pipe(
+        map(response => response.data),
         tap((updatedDeliveryNote) => {
           const deliveryNotes = store.deliveryNotes().map(dn => 
             dn.referenceId === updatedDeliveryNote.referenceId ? updatedDeliveryNote : dn

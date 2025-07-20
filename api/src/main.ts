@@ -1,6 +1,6 @@
 import 'reflect-metadata'; // ✅ Required for TypeORM metadata
 
-import { Logger } from '@nestjs/common';
+import { Logger, VersioningType } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
 import { Request, Response, NextFunction } from 'express';
@@ -10,6 +10,11 @@ async function bootstrap() {
   
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'debug', 'log', 'verbose'],
+  });
+  
+  app.enableVersioning({
+    type: VersioningType.URI,
+    defaultVersion: '1', // Optional
   });
   
   // Add request logging middleware

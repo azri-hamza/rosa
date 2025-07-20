@@ -5,3 +5,4 @@ export * from './quote-item.interface';
 export * from './client.interface';
 export * from './delivery-note.interface';
 export * from './delivery-note-item.interface';
+export * from './response.interface';

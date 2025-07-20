@@ -113,22 +113,45 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   const token = tokenService.getToken();
+  const refreshToken = tokenService.getRefreshToken();
 
+  // If no access token but refresh token exists, try to refresh first
+  if (!token && refreshToken) {
+    console.log('No access token but refresh token exists, attempting refresh');
+    return tokenService.refreshToken().pipe(
+      switchMap((tokens) => {
+        console.log('Refresh successful, making request with new token');
+        const newAuthReq = addTokenToRequest(req, tokens.access_token);
+        return next(newAuthReq);
+      }),
+      catchError((refreshError) => {
+        console.log('Refresh failed, proceeding without authentication');
+        tokenService.clearTokens();
+        return next(req);
+      })
+    );
+  }
+
+  // If no tokens at all, proceed without authentication
   if (!token) {
     return next(req);
   }
 
+  // If access token exists, use it
   const authReq = addTokenToRequest(req, token);
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
       if (error.status === 401) {
+        console.log('401 error received, attempting token refresh');
         return tokenService.refreshToken().pipe(
           switchMap((tokens) => {
+            console.log('Refresh successful after 401, retrying request');
             const newAuthReq = addTokenToRequest(req, tokens.access_token);
             return next(newAuthReq);
           }),
           catchError((refreshError) => {
+            console.log('Refresh failed after 401, clearing tokens');
             tokenService.clearTokens();
             return throwError(() => refreshError);
           })

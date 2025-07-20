@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { SalesController } from './sales.controller';
+import { SalesV1Controller } from '../v1/sales/sales-v1.controller';
 import { SalesService } from './sales.service';
 import { 
   QUOTE_REPOSITORY, 
@@ -10,9 +10,10 @@ import {
 import { DataSource } from 'typeorm';
 import { ProductService } from '../product/product.service';
 import { ClientService } from '../client/client.service';
+import { PdfService } from './pdf.service';
 
-describe('SalesController', () => {
-  let controller: SalesController;
+describe('SalesV1Controller', () => {
+  let controller: SalesV1Controller;
 
   const mockQuoteRepository = {
     findAll: jest.fn().mockResolvedValue([]),
@@ -61,9 +62,13 @@ describe('SalesController', () => {
     findOne: jest.fn(),
   };
 
+  const mockPdfService = {
+    generateDeliveryNotePDF: jest.fn().mockResolvedValue(Buffer.from('test')),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [SalesController],
+      controllers: [SalesV1Controller],
       providers: [
         SalesService,
         {
@@ -94,10 +99,14 @@ describe('SalesController', () => {
           provide: ClientService,
           useValue: mockClientService,
         },
+        {
+          provide: PdfService,
+          useValue: mockPdfService,
+        },
       ],
     }).compile();
 
-    controller = module.get<SalesController>(SalesController);
+    controller = module.get<SalesV1Controller>(SalesV1Controller);
   });
 
   it('should be defined', () => {

@@ -12,7 +12,7 @@
     "strictPropertyInitialization": false
   },
   "files": [],
-  "include": ["**/*.ts", "../../../api/src/app/vat/vat-rate.controller.ts", "../../../api/src/app/vat/vat-rate.service.ts"],
+  "include": ["**/*.ts"],
   "references": [
     {
       "path": "./tsconfig.lib.json"

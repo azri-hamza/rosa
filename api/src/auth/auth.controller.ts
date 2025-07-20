@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UnauthorizedException, Patch, Param, Logger, Inject } from '@nestjs/common';
+import { Controller, Post, Body, UnauthorizedException, Patch, Param, Logger, Inject, VERSION_NEUTRAL } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UserService } from '../app/user/user.service';
 
@@ -22,7 +22,11 @@ interface UpdatePasswordDto {
   newPassword: string;
 }
 
-@Controller('auth')
+interface RefreshTokenDto {
+  refresh_token: string;
+}
+
+@Controller({ path: 'auth', version: VERSION_NEUTRAL })
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
 
@@ -53,6 +57,20 @@ export class AuthController {
     // For now, we'll just return a success message
     // In a real app, you might want to invalidate the token on the server
     return { message: 'Logged out successfully' };
+  }
+
+  @Post('refresh')
+  async refresh(@Body() refreshTokenDto: RefreshTokenDto) {
+    this.logger.log('Refresh token endpoint hit');
+    
+    try {
+      const result = await this.authService.refreshToken(refreshTokenDto);
+      this.logger.log('Token refresh successful');
+      return result;
+    } catch (error) {
+      this.logger.error('Token refresh failed:', error);
+      throw new UnauthorizedException('Invalid refresh token');
+    }
   }
 
   @Patch('update-password/:email')

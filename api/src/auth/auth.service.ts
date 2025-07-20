@@ -19,6 +19,10 @@ interface AuthResponse {
   };
 }
 
+interface RefreshTokenDto {
+  refresh_token: string;
+}
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -71,5 +75,38 @@ export class AuthService {
         roles: user.roles,
       },
     };
+  }
+
+  async refreshToken(refreshTokenDto: RefreshTokenDto): Promise<Omit<AuthResponse, 'user'>> {
+    this.logger.log('Refresh token method called');
+
+    try {
+      // Verify the refresh token
+      const payload = await this.jwtService.verifyAsync(refreshTokenDto.refresh_token);
+      
+      // Find the user
+      const user = await this.userService.findByUsername(payload.username);
+      if (!user) {
+        this.logger.warn(`Refresh token failed: User not found for username ${payload.username}`);
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+
+      // Generate new tokens
+      const newPayload = { sub: user.id, username: user.email };
+      const [access_token, refresh_token] = await Promise.all([
+        this.jwtService.signAsync(newPayload),
+        this.jwtService.signAsync(newPayload, { expiresIn: '7d' }),
+      ]);
+
+      this.logger.debug('New tokens generated successfully');
+
+      return {
+        access_token,
+        refresh_token,
+      };
+    } catch (error) {
+      this.logger.error('Refresh token failed:', error);
+      throw new UnauthorizedException('Invalid refresh token');
+    }
   }
 } 
