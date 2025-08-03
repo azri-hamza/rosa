@@ -97,7 +97,7 @@
       </button>
     </div>
 
-    <div formArrayName="items" class="items-table-container">
+    <div class="items-table-container">
       <table class="items-table">
         <thead>
           <tr>
@@ -107,10 +107,6 @@
             <th class="delivered-col">Delivered</th>
             <th class="price-col">Unit Price</th>
             <th class="discount-col">Discount %</th>
-            <th class="discount-amount-col">Discount Amount</th>
-            <th class="discounted-price-col">Net Unit Price</th>
-            <th class="vat-col">VAT Rate (%)</th>
-            <th class="gross-price-col">Gross Unit Price</th>
             <th class="net-total-col">Net Total</th>
             <th class="vat-amount-col">VAT Amount</th>
             <th class="gross-total-col">Gross Total</th>
@@ -118,212 +114,95 @@
           </tr>
         </thead>
         <tbody>
-          <tr 
-            *ngFor="let item of items.controls; let i = index" 
-            [formGroupName]="i" 
-            class="item-row">
-            
-            <!-- Product -->
-            <td class="product-cell">
-              <nz-form-item>
-                <nz-form-control nzErrorTip="Product name is required">
-                  <input
-                    #productInput
-                    nz-input
-                    formControlName="productName"
-                    placeholder="Enter product name"
-                    [nzAutocomplete]="auto"
-                    (input)="onProductSearch($event)" />
-                  <nz-autocomplete 
-                    #auto 
-                    [nzBackfill]="true"
-                    (selectionChange)="onProductSelect($event, i)">
-                    <nz-auto-option 
-                      *ngFor="let product of productOptions" 
-                      [nzValue]="product.name"
-                      [nzLabel]="product.name">
-                      <div>
-                        <strong>{{ product.name }}</strong>
-                        <div class="product-description">{{ product.description }}</div>
-                      </div>
-                    </nz-auto-option>
-                  </nz-autocomplete>
-                </nz-form-control>
-              </nz-form-item>
-            </td>
+          @for (item of items.controls; track $index) {
+            <tr class="item-row">
+              <!-- Product -->
+              <td class="product-cell">
+                <div class="product-info">
+                  <strong>{{ item.get('productName')?.value }}</strong>
+                </div>
+              </td>
 
-            <!-- Description -->
-            <td class="description-cell">
-              <nz-form-item>
-                <nz-form-control>
-                  <input
-                    nz-input
-                    formControlName="description"
-                    placeholder="Enter description" />
-                </nz-form-control>
-              </nz-form-item>
-            </td>
+              <!-- Description -->
+              <td class="description-cell">
+                <div class="description-text">
+                  {{ item.get('description')?.value || '-' }}
+                </div>
+              </td>
 
-            <!-- Ordered Quantity -->
-            <td class="quantity-cell">
-              <nz-form-item>
-                <nz-form-control nzErrorTip="Quantity is required">
-                  <nz-input-number
-                    formControlName="quantity"
-                    [nzMin]="1"
-                    [nzStep]="1">
-                  </nz-input-number>
-                </nz-form-control>
-              </nz-form-item>
-            </td>
+              <!-- Ordered Quantity -->
+              <td class="quantity-cell">
+                <div class="quantity-display">
+                  {{ item.get('quantity')?.value }}
+                </div>
+              </td>
 
-            <!-- Delivered Quantity -->
-            <td class="delivered-cell">
-              <nz-form-item>
-                <nz-form-control>
-                  <nz-input-number
-                    formControlName="deliveredQuantity"
-                    [nzMin]="0"
-                    [nzStep]="1">
-                  </nz-input-number>
-                </nz-form-control>
-              </nz-form-item>
-            </td>
+              <!-- Delivered Quantity -->
+              <td class="delivered-cell">
+                <div class="delivered-display">
+                  {{ item.get('deliveredQuantity')?.value }}
+                </div>
+              </td>
 
-            <!-- Unit Price -->
-            <td class="price-cell">
-              <nz-form-item>
-                <nz-form-control [nzErrorTip]="'Please enter a valid unit price'">
-                  <nz-input-number
-                    [formControlName]="'unitPrice'"
-                    [nzMin]="0"
-                    [nzPrecision]="3"
-                    [nzFormatter]="currencyFormatter"
-                    [nzParser]="currencyParser">
-                  </nz-input-number>
-                </nz-form-control>
-              </nz-form-item>
-            </td>
+              <!-- Unit Price -->
+              <td class="price-cell">
+                <div class="price-display">
+                  {{ item.get('unitPrice')?.value | currency:'TND':'symbol':'1.3-3' }}
+                </div>
+              </td>
 
-            <!-- Discount Percentage -->
-            <td class="discount-cell">
-              <nz-form-item>
-                <nz-form-control [nzErrorTip]="'Please enter a valid discount percentage'">
-                  <nz-input-number
-                    [formControlName]="'discountPercentage'"
-                    [nzMin]="0"
-                    [nzMax]="100"
-                    [nzStep]="1"
-                    [nzPrecision]="2"
-                    nz-tooltip
-                    nzTooltipTitle="Primary discount field - calculations are based on this percentage">
-                  </nz-input-number>
-                </nz-form-control>
-              </nz-form-item>
-            </td>
+              <!-- Discount Percentage -->
+              <td class="discount-cell">
+                <div class="discount-display">
+                  {{ item.get('discountPercentage')?.value }}%
+                </div>
+              </td>
 
-            <!-- Discount Amount -->
-            <td class="discount-amount-cell">
-              <nz-form-item>
-                <nz-form-control [nzErrorTip]="'Helper field - enter amount to calculate percentage'">
-                  <nz-input-number
-                    [formControlName]="'discountAmount'"
-                    [nzMin]="0"
-                    [nzPrecision]="3"
-                    [nzFormatter]="currencyFormatter"
-                    [nzParser]="currencyParser"
-                    nz-tooltip
-                    nzTooltipTitle="Helper field - enter a discount amount to automatically calculate the corresponding percentage"
-                    class="helper-field">
-                  </nz-input-number>
-                </nz-form-control>
-              </nz-form-item>
-            </td>
+              <!-- Net Total -->
+              <td class="net-total-cell">
+                <div class="total-display">
+                  {{ item.get('totalPrice')?.value | currency:'TND':'symbol':'1.3-3' }}
+                </div>
+              </td>
 
-            <!-- Net Unit Price (after discount) -->
-            <td class="discounted-price-cell">
-              <nz-form-item>
-                <nz-form-control>
-                  <nz-input-number
-                    [formControlName]="'netUnitPrice'"
-                    [nzDisabled]="true"
-                    [nzPrecision]="3"
-                    [nzFormatter]="currencyFormatter">
-                  </nz-input-number>
-                </nz-form-control>
-              </nz-form-item>
-            </td>
+              <!-- VAT Amount -->
+              <td class="vat-amount-cell">
+                <div class="vat-display">
+                  {{ item.get('vatAmount')?.value | currency:'TND':'symbol':'1.3-3' }}
+                </div>
+              </td>
 
-            <!-- VAT Rate -->
-            <td class="vat-cell">
-              <nz-form-item>
-                <nz-form-control [nzErrorTip]="'Please enter a valid VAT rate'">
-                  <nz-input-number
-                    [formControlName]="'vatRate'"
-                    [nzMin]="0"
-                    [nzMax]="100"
-                    [nzStep]="1"
-                    [nzPrecision]="2">
-                  </nz-input-number>
-                </nz-form-control>
-              </nz-form-item>
-            </td>
+              <!-- Gross Total -->
+              <td class="gross-total-cell">
+                <div class="gross-display">
+                  {{ item.get('grossTotalPrice')?.value | currency:'TND':'symbol':'1.3-3' }}
+                </div>
+              </td>
 
-            <!-- Gross Unit Price -->
-            <td class="gross-price-cell">
-              <nz-form-item>
-                <nz-form-control>
-                  <nz-input-number
-                    [formControlName]="'grossUnitPrice'"
-                    [nzDisabled]="true"
-                    [nzPrecision]="3"
-                    [nzFormatter]="currencyFormatter">
-                  </nz-input-number>
-                </nz-form-control>
-              </nz-form-item>
-            </td>
-
-            <!-- Net Total -->
-            <td class="net-total-cell">
-              <nz-form-item>
-                <nz-form-control>
-                  <nz-input-number
-                    [formControlName]="'totalPrice'"
-                    [nzDisabled]="true"
-                    [nzPrecision]="3"
-                    [nzFormatter]="currencyFormatter">
-                  </nz-input-number>
-                </nz-form-control>
-              </nz-form-item>
-            </td>
-
-            <!-- VAT Amount -->
-            <td class="vat-amount-cell">
-              <div class="calculated-value">
-                {{ getVatAmount(i) | currency:'EUR':'symbol':'1.3-3' }}
-              </div>
-            </td>
-
-            <!-- Gross Total -->
-            <td class="gross-total-cell">
-              <div class="calculated-value">
-                {{ getItemGrossTotal(i) | currency:'EUR':'symbol':'1.3-3' }}
-              </div>
-            </td>
-
-            <!-- Actions -->
-            <td class="actions-cell">
-              <button 
-                type="button" 
-                nz-button 
-                nzType="text" 
-                nzDanger
-                (click)="removeItem(i)"
-                [disabled]="items.length === 1">
-                <span nz-icon nzType="delete"></span>
-              </button>
-            </td>
-          </tr>
+              <!-- Actions -->
+              <td class="actions-cell">
+                <button 
+                  type="button" 
+                  nz-button 
+                  nzType="link" 
+                  nzSize="small"
+                  (click)="editItem($index)"
+                  title="Edit item">
+                  <span nz-icon nzType="edit"></span>
+                </button>
+                <button 
+                  type="button" 
+                  nz-button 
+                  nzType="link" 
+                  nzSize="small"
+                  nzDanger
+                  (click)="removeItem($index)"
+                  title="Delete item">
+                  <span nz-icon nzType="delete"></span>
+                </button>
+              </td>
+            </tr>
+          }
         </tbody>
       </table>
     </div>

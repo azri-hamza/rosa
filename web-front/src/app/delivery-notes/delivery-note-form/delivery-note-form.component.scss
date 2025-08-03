@@ -203,6 +203,40 @@
           }
         }
       }
+      
+      // Read-only display styles
+      .product-info,
+      .description-text,
+      .quantity-display,
+      .delivered-display,
+      .price-display,
+      .discount-display,
+      .total-display,
+      .vat-display,
+      .gross-display {
+        padding: 8px 4px;
+        min-height: 32px;
+        display: flex;
+        align-items: center;
+        color: #262626;
+        font-size: 14px;
+      }
+      
+      .product-info {
+        font-weight: 600;
+      }
+      
+      .description-text {
+        color: #8c8c8c;
+      }
+      
+      .actions-cell {
+        padding: 8px;
+        
+        button {
+          margin-right: 4px;
+        }
+      }
     }
   }
 }

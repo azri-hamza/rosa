@@ -1,0 +1,213 @@
+<div class="product-item-modal">
+  <form nz-form [formGroup]="productForm" (ngSubmit)="onSave()">
+    
+    <!-- Product Selection -->
+    <nz-form-item>
+      <nz-form-label [nzSpan]="6" nzRequired>Product</nz-form-label>
+      <nz-form-control [nzSpan]="18" nzErrorTip="Product name is required">
+        <input
+          nz-input
+          formControlName="productName"
+          placeholder="Search and select a product"
+          [nzAutocomplete]="auto"
+          (input)="onProductSearch($event)" />
+        <nz-autocomplete 
+          #auto 
+          [nzBackfill]="true"
+          (selectionChange)="onProductSelect($event)">
+          <nz-auto-option 
+            *ngFor="let product of productOptions" 
+            [nzValue]="product.name"
+            [nzLabel]="product.name">
+            <div class="product-option">
+              <div class="product-name">{{ product.name }}</div>
+              <div class="product-description">{{ product.description }}</div>
+              <div class="product-price" *ngIf="product.netPrice">
+                Net Price: {{ product.netPrice | currency:'TND':'symbol':'1.3-3' }}
+              </div>
+            </div>
+          </nz-auto-option>
+        </nz-autocomplete>
+      </nz-form-control>
+    </nz-form-item>
+
+    <!-- Description -->
+    <nz-form-item>
+      <nz-form-label [nzSpan]="6">Description</nz-form-label>
+      <nz-form-control [nzSpan]="18">
+        <textarea
+          nz-input
+          formControlName="description"
+          placeholder="Enter product description"
+          [nzAutosize]="{ minRows: 2, maxRows: 4 }">
+        </textarea>
+      </nz-form-control>
+    </nz-form-item>
+
+    <!-- Quantities Row -->
+    <div class="quantities-row">
+      <nz-form-item class="quantity-item">
+        <nz-form-label [nzSpan]="12" nzRequired>Ordered Qty</nz-form-label>
+        <nz-form-control [nzSpan]="12" nzErrorTip="Quantity is required">
+          <nz-input-number
+            formControlName="quantity"
+            [nzMin]="1"
+            [nzStep]="1"
+            [nzPrecision]="0">
+          </nz-input-number>
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item class="quantity-item">
+        <nz-form-label [nzSpan]="12">Delivered Qty</nz-form-label>
+        <nz-form-control [nzSpan]="12">
+          <nz-input-number
+            formControlName="deliveredQuantity"
+            [nzMin]="0"
+            [nzStep]="1"
+            [nzPrecision]="0">
+          </nz-input-number>
+        </nz-form-control>
+      </nz-form-item>
+    </div>
+
+    <!-- Pricing Row -->
+    <div class="pricing-row">
+      <nz-form-item class="price-item">
+        <nz-form-label [nzSpan]="12" nzRequired>Unit Price</nz-form-label>
+        <nz-form-control [nzSpan]="12" nzErrorTip="Unit price is required">
+          <nz-input-number
+            formControlName="unitPrice"
+            [nzMin]="0"
+            [nzPrecision]="3"
+            [nzFormatter]="currencyFormatter"
+            [nzParser]="currencyParser">
+          </nz-input-number>
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item class="price-item">
+        <nz-form-label [nzSpan]="12">VAT Rate (%)</nz-form-label>
+        <nz-form-control [nzSpan]="12">
+          <nz-input-number
+            formControlName="vatRate"
+            [nzMin]="0"
+            [nzMax]="100"
+            [nzStep]="1"
+            [nzPrecision]="2">
+          </nz-input-number>
+        </nz-form-control>
+      </nz-form-item>
+    </div>
+
+    <!-- Discount Row -->
+    <div class="discount-row">
+      <nz-form-item class="discount-item">
+        <nz-form-label [nzSpan]="12">Discount (%)</nz-form-label>
+        <nz-form-control [nzSpan]="12">
+          <nz-input-number
+            formControlName="discountPercentage"
+            [nzMin]="0"
+            [nzMax]="100"
+            [nzStep]="1"
+            [nzPrecision]="2">
+          </nz-input-number>
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item class="discount-item">
+        <nz-form-label [nzSpan]="12">Discount Amount</nz-form-label>
+        <nz-form-control [nzSpan]="12">
+          <nz-input-number
+            formControlName="discountAmount"
+            [nzMin]="0"
+            [nzPrecision]="3"
+            [nzFormatter]="currencyFormatter"
+            [nzParser]="currencyParser"
+            placeholder="Helper field">
+          </nz-input-number>
+        </nz-form-control>
+      </nz-form-item>
+    </div>
+
+    <!-- Calculated Fields (Read-only) -->
+    <div class="calculated-fields">
+      <h4>Calculated Values</h4>
+      
+      <div class="calculated-row">
+        <nz-form-item class="calculated-item">
+          <nz-form-label [nzSpan]="12">Net Unit Price</nz-form-label>
+          <nz-form-control [nzSpan]="12">
+            <nz-input-number
+              formControlName="netUnitPrice"
+              [nzDisabled]="true"
+              [nzPrecision]="3"
+              [nzFormatter]="currencyFormatter">
+            </nz-input-number>
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item class="calculated-item">
+          <nz-form-label [nzSpan]="12">Gross Unit Price</nz-form-label>
+          <nz-form-control [nzSpan]="12">
+            <nz-input-number
+              formControlName="grossUnitPrice"
+              [nzDisabled]="true"
+              [nzPrecision]="3"
+              [nzFormatter]="currencyFormatter">
+            </nz-input-number>
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+
+      <div class="calculated-row">
+        <nz-form-item class="calculated-item">
+          <nz-form-label [nzSpan]="12">Net Total</nz-form-label>
+          <nz-form-control [nzSpan]="12">
+            <nz-input-number
+              formControlName="totalPrice"
+              [nzDisabled]="true"
+              [nzPrecision]="3"
+              [nzFormatter]="currencyFormatter">
+            </nz-input-number>
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item class="calculated-item">
+          <nz-form-label [nzSpan]="12">VAT Amount</nz-form-label>
+          <nz-form-control [nzSpan]="12">
+            <nz-input-number
+              formControlName="vatAmount"
+              [nzDisabled]="true"
+              [nzPrecision]="3"
+              [nzFormatter]="currencyFormatter">
+            </nz-input-number>
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+
+      <div class="calculated-row">
+        <nz-form-item class="calculated-item">
+          <nz-form-label [nzSpan]="12">Gross Total</nz-form-label>
+          <nz-form-control [nzSpan]="12">
+            <nz-input-number
+              formControlName="grossTotalPrice"
+              [nzDisabled]="true"
+              [nzPrecision]="3"
+              [nzFormatter]="currencyFormatter">
+            </nz-input-number>
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="modal-footer">
+      <button nz-button type="button" (click)="onCancel()">Cancel</button>
+      <button nz-button nzType="primary" type="submit" [disabled]="productForm.invalid">
+        {{ nzModalData.item ? 'Update' : 'Add' }} Item
+      </button>
+    </div>
+
+  </form>
+</div>

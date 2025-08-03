@@ -22,7 +22,7 @@ import { NzFormModule } from 'ng-zorro-antd/form';
 import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzInputNumberModule } from 'ng-zorro-antd/input-number';
 import { NzButtonModule } from 'ng-zorro-antd/button';
-import { NzModalRef } from 'ng-zorro-antd/modal';
+
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzDatePickerModule } from 'ng-zorro-antd/date-picker';
 import { NzSelectModule } from 'ng-zorro-antd/select';
@@ -32,6 +32,8 @@ import { of, merge, Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { NzAutocompleteModule } from 'ng-zorro-antd/auto-complete';
 import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
+import { NzModalModule, NzModalService, NzModalRef, NZ_MODAL_DATA } from 'ng-zorro-antd/modal';
+import { ProductItemModalComponent, ProductItemData } from './product-item-modal/product-item-modal.component';
 import { takeUntil } from 'rxjs/operators';
 
 @Component({
@@ -50,6 +52,7 @@ import { takeUntil } from 'rxjs/operators';
     NzSelectModule,
     NzAutocompleteModule,
     NzToolTipModule,
+    NzModalModule,
   ],
   templateUrl: './delivery-note-form.component.html',
   styleUrl: './delivery-note-form.component.scss',
@@ -61,10 +64,13 @@ export class DeliveryNoteFormComponent implements OnInit, OnDestroy {
   @ViewChildren('productInput') productInputs!: QueryList<ElementRef>;
 
   private fb = inject(FormBuilder);
-  private modal = inject(NzModalRef);
+  private modalRef = inject(NzModalRef);
   private productService = inject(ProductService);
   private clientService = inject(ClientService);
-  private cdr = inject(ChangeDetectorRef); 
+  private modal = inject(NzModalService);
+  private cdr = inject(ChangeDetectorRef);
+
+  readonly nzModalData: { deliveryNote?: DeliveryNote } = inject(NZ_MODAL_DATA); 
 
   deliveryNoteForm: FormGroup;
   clients: Client[] = [];
@@ -144,8 +150,10 @@ export class DeliveryNoteFormComponent implements OnInit, OnDestroy {
     // Subscribe to global discount amount changes to calculate percentage (frontend helper)
     this.deliveryNoteForm
       .get('globalDiscountAmount')!
-      .valueChanges.subscribe((globalDiscountAmount: number) => {
-        this.calculateGlobalDiscountPercentageFromAmount(globalDiscountAmount);
+      .valueChanges.subscribe((globalDiscountAmount: number | null) => {
+        if (globalDiscountAmount !== null) {
+          this.calculateGlobalDiscountPercentageFromAmount(globalDiscountAmount);
+        }
       });
   }
 
@@ -153,8 +161,7 @@ export class DeliveryNoteFormComponent implements OnInit, OnDestroy {
     this.addItem(); // Add one item by default
 
     // If editing, load only the specific client then populate form
-    const deliveryNote = this.modal.getConfig().nzData
-      ?.deliveryNote as DeliveryNote;
+    const deliveryNote = this.nzModalData?.deliveryNote as DeliveryNote;
     if (deliveryNote) {
       this.isEditMode = true;
       this.loadClientAndPopulateForm(deliveryNote);
@@ -167,28 +174,102 @@ export class DeliveryNoteFormComponent implements OnInit, OnDestroy {
 
  
   addItem(item?: any) {
+    // If item data is provided (for loading existing items), add directly to form
+    if (item) {
+      const itemForm = this.fb.group({
+        id: [item?.id || null],
+        productName: [item?.productName || '', [Validators.required]],
+        description: [item?.description || ''],
+        quantity: [item?.quantity || 0, [Validators.required, Validators.min(0)]],
+        deliveredQuantity: [item?.deliveredQuantity || 0, [Validators.min(0)]],
+        unitPrice: [
+          item?.unitPrice || 0,
+          [Validators.required, Validators.min(0)],
+        ],
+        discountPercentage: [
+          item?.discountPercentage || 0,
+          [Validators.min(0), Validators.max(100)],
+        ],
+        discountAmount: [item?.discountAmount || 0, [Validators.min(0)]],
+        netUnitPrice: [item?.netUnitPrice || 0],
+        grossUnitPrice: [item?.grossUnitPrice || 0],
+        totalPrice: [item?.totalPrice || 0],
+        vatRate: [item?.vatRate || 0, [Validators.min(0), Validators.max(100)]],
+        vatAmount: [item?.vatAmount || 0],
+        grossTotalPrice: [item?.grossTotalPrice || 0],
+        productId: [item?.productId || null],
+      });
+
+      // Subscribe to changes that affect price calculations
+      merge(
+        itemForm.get('quantity')!.valueChanges,
+        itemForm.get('unitPrice')!.valueChanges,
+        itemForm.get('discountPercentage')!.valueChanges,
+        itemForm.get('vatRate')!.valueChanges
+      )
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(() => {
+          this.calculateItemPrices(itemForm);
+        });
+
+      // Subscribe to discount amount changes to calculate percentage (frontend helper)
+      itemForm
+        .get('discountAmount')!
+        .valueChanges.pipe(takeUntil(this.destroy$))
+        .subscribe((discountAmount: number | null) => {
+          if (discountAmount !== null) {
+            this.calculateDiscountPercentageFromAmount(itemForm, discountAmount);
+          }
+        });
+
+      this.items.push(itemForm);
+    } else {
+      // Open modal for new item
+      this.openProductItemModal();
+    }
+  }
+
+  openProductItemModal(item?: ProductItemData, index?: number) {
+    this.modal
+      .create({
+        nzTitle: item ? 'Edit Product Item' : 'Add Product Item',
+        nzContent: ProductItemModalComponent,
+        nzWidth: '800px',
+        nzFooter: null,
+        nzData: {
+          item: item
+        }
+      })
+      .afterClose.subscribe((result: ProductItemData) => {
+        if (result) {
+          if (index !== undefined) {
+            // Update existing item
+            this.updateItemAtIndex(index, result);
+          } else {
+            // Add new item
+            this.addItemFromModal(result);
+          }
+        }
+      });
+  }
+
+  private addItemFromModal(itemData: ProductItemData) {
     const itemForm = this.fb.group({
-      id: [item?.id || null],
-      productName: [item?.productName || '', [Validators.required]],
-      description: [item?.description || ''],
-      quantity: [item?.quantity || 0, [Validators.required, Validators.min(0)]],
-      deliveredQuantity: [item?.deliveredQuantity || 0, [Validators.min(0)]],
-      unitPrice: [
-        item?.unitPrice || 0,
-        [Validators.required, Validators.min(0)],
-      ],
-      discountPercentage: [
-        item?.discountPercentage || 0,
-        [Validators.min(0), Validators.max(100)],
-      ],
-      discountAmount: [item?.discountAmount || 0, [Validators.min(0)]],
-      netUnitPrice: [item?.netUnitPrice || 0],
-      grossUnitPrice: [item?.grossUnitPrice || 0],
-      totalPrice: [item?.totalPrice || 0],
-      vatRate: [item?.vatRate || 0, [Validators.min(0), Validators.max(100)]],
-      vatAmount: [item?.vatAmount || 0],
-      grossTotalPrice: [item?.grossTotalPrice || 0],
-      productId: [item?.productId || null],
+      id: [itemData.id || null],
+      productName: [itemData.productName, [Validators.required]],
+      description: [itemData.description],
+      quantity: [itemData.quantity, [Validators.required, Validators.min(0)]],
+      deliveredQuantity: [itemData.deliveredQuantity, [Validators.min(0)]],
+      unitPrice: [itemData.unitPrice, [Validators.required, Validators.min(0)]],
+      discountPercentage: [itemData.discountPercentage, [Validators.min(0), Validators.max(100)]],
+      discountAmount: [itemData.discountAmount, [Validators.min(0)]],
+      netUnitPrice: [itemData.netUnitPrice],
+      grossUnitPrice: [itemData.grossUnitPrice],
+      totalPrice: [itemData.totalPrice],
+      vatRate: [itemData.vatRate, [Validators.min(0), Validators.max(100)]],
+      vatAmount: [itemData.vatAmount],
+      grossTotalPrice: [itemData.grossTotalPrice],
+      productId: [itemData.productId],
     });
 
     // Subscribe to changes that affect price calculations
@@ -207,11 +288,56 @@ export class DeliveryNoteFormComponent implements OnInit, OnDestroy {
     itemForm
       .get('discountAmount')!
       .valueChanges.pipe(takeUntil(this.destroy$))
-      .subscribe((discountAmount: number) => {
-        this.calculateDiscountPercentageFromAmount(itemForm, discountAmount);
+      .subscribe((discountAmount: number | null) => {
+        if (discountAmount !== null) {
+          this.calculateDiscountPercentageFromAmount(itemForm, discountAmount);
+        }
       });
 
     this.items.push(itemForm);
+  }
+
+  private updateItemAtIndex(index: number, itemData: ProductItemData) {
+    const itemForm = this.items.at(index);
+    itemForm.patchValue({
+      productName: itemData.productName,
+      description: itemData.description,
+      quantity: itemData.quantity,
+      deliveredQuantity: itemData.deliveredQuantity,
+      unitPrice: itemData.unitPrice,
+      discountPercentage: itemData.discountPercentage,
+      discountAmount: itemData.discountAmount,
+      netUnitPrice: itemData.netUnitPrice,
+      grossUnitPrice: itemData.grossUnitPrice,
+      totalPrice: itemData.totalPrice,
+      vatRate: itemData.vatRate,
+      vatAmount: itemData.vatAmount,
+      grossTotalPrice: itemData.grossTotalPrice,
+      productId: itemData.productId,
+    });
+  }
+
+  editItem(index: number) {
+    const itemForm = this.items.at(index);
+    const itemData: ProductItemData = {
+      id: itemForm.get('id')?.value,
+      productName: itemForm.get('productName')?.value,
+      description: itemForm.get('description')?.value,
+      quantity: itemForm.get('quantity')?.value,
+      deliveredQuantity: itemForm.get('deliveredQuantity')?.value,
+      unitPrice: itemForm.get('unitPrice')?.value,
+      discountPercentage: itemForm.get('discountPercentage')?.value,
+      discountAmount: itemForm.get('discountAmount')?.value,
+      netUnitPrice: itemForm.get('netUnitPrice')?.value,
+      grossUnitPrice: itemForm.get('grossUnitPrice')?.value,
+      totalPrice: itemForm.get('totalPrice')?.value,
+      vatRate: itemForm.get('vatRate')?.value,
+      vatAmount: itemForm.get('vatAmount')?.value,
+      grossTotalPrice: itemForm.get('grossTotalPrice')?.value,
+      productId: itemForm.get('productId')?.value,
+    };
+    
+    this.openProductItemModal(itemData, index);
   }  
   
   onClientDropdownOpenChange(event: boolean) {
@@ -363,7 +489,7 @@ export class DeliveryNoteFormComponent implements OnInit, OnDestroy {
         }),
       };
 
-      this.modal.close(deliveryNoteData);
+      this.modalRef.close(deliveryNoteData);
     } else {
       // Mark all fields as touched to show validation errors
       Object.values(this.deliveryNoteForm.controls).forEach((control) => {
@@ -389,7 +515,7 @@ export class DeliveryNoteFormComponent implements OnInit, OnDestroy {
   }
 
   onCancel() {
-    this.modal.close();
+    this.modalRef.destroy();
   }
 
   ngOnDestroy() {
