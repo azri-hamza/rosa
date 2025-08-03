@@ -202,6 +202,16 @@
                 </button>
               </td>
             </tr>
+          } @empty {
+            <tr class="empty-state">
+              <td colspan="10" class="empty-cell">
+                <div class="empty-content">
+                  <span nz-icon nzType="inbox" class="empty-icon"></span>
+                  <p class="empty-text">No items added yet</p>
+                  <p class="empty-subtext">Click "Add Item" to add products to this delivery note</p>
+                </div>
+              </td>
+            </tr>
           }
         </tbody>
       </table>

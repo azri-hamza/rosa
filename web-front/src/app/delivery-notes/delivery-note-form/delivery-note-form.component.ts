@@ -158,14 +158,13 @@ export class DeliveryNoteFormComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.addItem(); // Add one item by default
-
     // If editing, load only the specific client then populate form
     const deliveryNote = this.nzModalData?.deliveryNote as DeliveryNote;
     if (deliveryNote) {
       this.isEditMode = true;
       this.loadClientAndPopulateForm(deliveryNote);
     }
+    // Don't add any items by default - user will add them explicitly via the modal
   }
 
   get items(): FormArray {
@@ -173,60 +172,60 @@ export class DeliveryNoteFormComponent implements OnInit, OnDestroy {
   }
 
  
-  addItem(item?: any) {
-    // If item data is provided (for loading existing items), add directly to form
-    if (item) {
-      const itemForm = this.fb.group({
-        id: [item?.id || null],
-        productName: [item?.productName || '', [Validators.required]],
-        description: [item?.description || ''],
-        quantity: [item?.quantity || 0, [Validators.required, Validators.min(0)]],
-        deliveredQuantity: [item?.deliveredQuantity || 0, [Validators.min(0)]],
-        unitPrice: [
-          item?.unitPrice || 0,
-          [Validators.required, Validators.min(0)],
-        ],
-        discountPercentage: [
-          item?.discountPercentage || 0,
-          [Validators.min(0), Validators.max(100)],
-        ],
-        discountAmount: [item?.discountAmount || 0, [Validators.min(0)]],
-        netUnitPrice: [item?.netUnitPrice || 0],
-        grossUnitPrice: [item?.grossUnitPrice || 0],
-        totalPrice: [item?.totalPrice || 0],
-        vatRate: [item?.vatRate || 0, [Validators.min(0), Validators.max(100)]],
-        vatAmount: [item?.vatAmount || 0],
-        grossTotalPrice: [item?.grossTotalPrice || 0],
-        productId: [item?.productId || null],
+  addItem() {
+    // Always open modal for adding new items
+    this.openProductItemModal();
+  }
+
+  // Separate method for programmatically adding items (used when loading existing delivery notes)
+  private addItemToForm(item: any) {
+    const itemForm = this.fb.group({
+      id: [item?.id || null],
+      productName: [item?.productName || '', [Validators.required]],
+      description: [item?.description || ''],
+      quantity: [item?.quantity || 0, [Validators.required, Validators.min(0)]],
+      deliveredQuantity: [item?.deliveredQuantity || 0, [Validators.min(0)]],
+      unitPrice: [
+        item?.unitPrice || 0,
+        [Validators.required, Validators.min(0)],
+      ],
+      discountPercentage: [
+        item?.discountPercentage || 0,
+        [Validators.min(0), Validators.max(100)],
+      ],
+      discountAmount: [item?.discountAmount || 0, [Validators.min(0)]],
+      netUnitPrice: [item?.netUnitPrice || 0],
+      grossUnitPrice: [item?.grossUnitPrice || 0],
+      totalPrice: [item?.totalPrice || 0],
+      vatRate: [item?.vatRate || 0, [Validators.min(0), Validators.max(100)]],
+      vatAmount: [item?.vatAmount || 0],
+      grossTotalPrice: [item?.grossTotalPrice || 0],
+      productId: [item?.productId || null],
+    });
+
+    // Subscribe to changes that affect price calculations
+    merge(
+      itemForm.get('quantity')!.valueChanges,
+      itemForm.get('unitPrice')!.valueChanges,
+      itemForm.get('discountPercentage')!.valueChanges,
+      itemForm.get('vatRate')!.valueChanges
+    )
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.calculateItemPrices(itemForm);
       });
 
-      // Subscribe to changes that affect price calculations
-      merge(
-        itemForm.get('quantity')!.valueChanges,
-        itemForm.get('unitPrice')!.valueChanges,
-        itemForm.get('discountPercentage')!.valueChanges,
-        itemForm.get('vatRate')!.valueChanges
-      )
-        .pipe(takeUntil(this.destroy$))
-        .subscribe(() => {
-          this.calculateItemPrices(itemForm);
-        });
+    // Subscribe to discount amount changes to calculate percentage (frontend helper)
+    itemForm
+      .get('discountAmount')!
+      .valueChanges.pipe(takeUntil(this.destroy$))
+      .subscribe((discountAmount: number | null) => {
+        if (discountAmount !== null) {
+          this.calculateDiscountPercentageFromAmount(itemForm, discountAmount);
+        }
+      });
 
-      // Subscribe to discount amount changes to calculate percentage (frontend helper)
-      itemForm
-        .get('discountAmount')!
-        .valueChanges.pipe(takeUntil(this.destroy$))
-        .subscribe((discountAmount: number | null) => {
-          if (discountAmount !== null) {
-            this.calculateDiscountPercentageFromAmount(itemForm, discountAmount);
-          }
-        });
-
-      this.items.push(itemForm);
-    } else {
-      // Open modal for new item
-      this.openProductItemModal();
-    }
+    this.items.push(itemForm);
   }
 
   openProductItemModal(item?: ProductItemData, index?: number) {
@@ -588,7 +587,7 @@ export class DeliveryNoteFormComponent implements OnInit, OnDestroy {
     this.items.clear();
     deliveryNote.items.forEach((item) => {
       console.log('item on method populateForm', item);
-      this.addItem(item);
+      this.addItemToForm(item);
     });
   }
 

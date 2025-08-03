@@ -237,6 +237,40 @@
           margin-right: 4px;
         }
       }
+
+      // Empty state styling
+      .empty-state {
+        .empty-cell {
+          text-align: center;
+          padding: 40px 20px;
+          
+          .empty-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            
+            .empty-icon {
+              font-size: 48px;
+              color: #d9d9d9;
+              margin-bottom: 8px;
+            }
+            
+            .empty-text {
+              font-size: 16px;
+              font-weight: 500;
+              color: #8c8c8c;
+              margin: 0;
+            }
+            
+            .empty-subtext {
+              font-size: 14px;
+              color: #bfbfbf;
+              margin: 0;
+            }
+          }
+        }
+      }
     }
   }
 }
