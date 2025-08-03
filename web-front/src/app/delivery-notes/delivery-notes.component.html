@@ -56,7 +56,7 @@
           </nz-tag>
         </td>
         <td>{{ deliveryNote.itemCount }} items</td>
-        <td>{{ deliveryNote.totalAmount | currency:'EUR':'symbol':'1.3-3' }}</td>
+        <td>{{ deliveryNote.netTotalAfterGlobalDiscount | currency:'TND':'symbol':'1.3-3' }}</td>
         <td>
           <button 
             nz-button 

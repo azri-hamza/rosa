@@ -1,4 +1,4 @@
-import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, provideZoneChangeDetection, LOCALE_ID } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { appRoutes } from './app.routes';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
@@ -27,9 +27,12 @@ import { environment } from '../environments/environment';
 import { authInterceptor } from '@rosa/auth';
 import { registerLocaleData } from '@angular/common';
 import fr_FR_locale from '@angular/common/locales/fr';
+import ar_TN_locale from '@angular/common/locales/ar-TN';
 
-// Register French locale
+// Register French locale (for general app use)
 registerLocaleData(fr_FR_locale);
+// Register Arabic Tunisia locale (for currency and local formatting)
+registerLocaleData(ar_TN_locale, 'ar-TN');
 
 const icons = [
   HomeOutline,
@@ -56,6 +59,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([authInterceptor])),
     { provide: NZ_I18N, useValue: fr_FR },
     { provide: NZ_ICONS, useValue: icons },
+    { provide: LOCALE_ID, useValue: 'fr-FR' }, // Set French as default locale
     provideZoneChangeDetection({ eventCoalescing: true }),
     ...provideApiClient(environment),
   ],
