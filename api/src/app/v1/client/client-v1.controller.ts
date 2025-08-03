@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseIntPipe, UseGuards, Inject } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseIntPipe, UseGuards, Inject, ParseUUIDPipe } from '@nestjs/common';
 import { Client, CreateClientDto, UpdateClientDto, PaginationDto } from '@rosa/api-core';
 import { Response, ResponseMeta } from '@rosa/types';
 import { ClientService } from '../../client/client.service';
@@ -25,10 +25,7 @@ export class ClientV1Controller {
   }
 
   @Get('search')
-  async search(@Query('q') query: string): Promise<{
-    data: Client[];
-    meta: { version: string; timestamp: string };
-  }> {
+  async search(@Query('q') query: string): Promise<Response<Client[], ResponseMeta>> {
     const clients = await this.clientService.search(query || '');
     return {
       data: clients,
@@ -114,12 +111,12 @@ export class ClientV1Controller {
     };
   }
 
-  @Delete(':id')
-  async remove(@Param('id', ParseIntPipe) id: number): Promise<{
+  @Delete(':referenceId')
+  async remove(@Param('referenceId', ParseUUIDPipe) referenceId: string): Promise<{
     message: string;
     meta: { version: string; timestamp: string };
   }> {
-    await this.clientService.remove(id);
+    await this.clientService.remove(referenceId);
     return {
       message: 'Client deleted successfully',
       meta: {

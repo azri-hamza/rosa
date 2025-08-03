@@ -12,6 +12,7 @@
             nzServerSearch
             [nzLoading]="isLoadingClients"
             [nzFilterOption]="nzFilterOption"
+            (nzOpenChange)="onClientDropdownOpenChange($event)"
             (nzOnSearch)="onClientSearch($event)">
             <nz-option 
               *ngFor="let client of clients" 

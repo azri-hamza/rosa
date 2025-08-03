@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { ApiClient } from '@rosa/api-client';
-import { Client, CreateClientRequest, UpdateClientRequest, PaginatedResult } from '@rosa/types';
+import { Client, CreateClientRequest, UpdateClientRequest, PaginatedResult, Response } from '@rosa/types';
 
 @Injectable({ providedIn: 'root' })
 export class ClientService {
@@ -13,19 +13,19 @@ export class ClientService {
   }
 
   getClient(id: number) {
-    return this.apiClient.get<Client>(`clients/${id}`);
+    return this.apiClient.get<Response<Client>>(`clients/${id}`);
   }
 
   getClientByReferenceId(referenceId: string) {
-    return this.apiClient.get<Client>(`clients/reference/${referenceId}`);
+    return this.apiClient.get<Response<Client>>(`clients/reference/${referenceId}`);
   }
 
   createClient(client: CreateClientRequest) {
-    return this.apiClient.post<Client>('clients', client);
+    return this.apiClient.post<Response<Client>>('clients', client);
   }
 
   updateClient(id: number, client: UpdateClientRequest) {
-    return this.apiClient.patch<Client>(`clients/${id}`, client);
+    return this.apiClient.patch<Response<Client>>(`clients/${id}`, client);
   }
 
   deleteClient(id: number) {
@@ -33,8 +33,8 @@ export class ClientService {
   }
 
   searchClients(term: string) {
-    return this.apiClient.get<Client[]>('clients/search', { 
+    return this.apiClient.get<Response<Client[]>>('clients/search', { 
       params: { q: term } 
     });
   }
-} 
+}

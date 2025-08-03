@@ -23,7 +23,7 @@ export class ClientService {
   async search(query: string): Promise<Client[]> {
     if (!query) {
       return await this.clientRepository.find({
-        take: 10,
+        take: 20,
         order: { name: 'ASC' },
       });
     }
@@ -35,7 +35,7 @@ export class ClientService {
         { phoneNumber: Like(`%${query}%`) },
         { address: Like(`%${query}%`) },
       ],
-      take: 10,
+      take: 20,
       order: { name: 'ASC' },
     });
   }
@@ -74,18 +74,18 @@ export class ClientService {
     return await this.clientRepository.save(client);
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(referenceId: string): Promise<void> {
     // First check if the client exists
-    const client = await this.clientRepository.findOne({ where: { id } });
+    const client = await this.clientRepository.findOne({ where: { referenceId } });
     if (!client) {
-      throw new NotFoundException(`Client with ID ${id} not found`);
+      throw new NotFoundException(`Client with reference ID ${referenceId} not found`);
     }
     
     // Check if there are any quotes associated with this client
     const quotesCount = await this.clientRepository.manager
       .getRepository(Quote)
       .createQueryBuilder('quote')
-      .where('quote.client.id = :clientId', { clientId: id })
+      .where('quote.client.referenceId = :referenceId', { referenceId })
       .getCount();
     
     if (quotesCount > 0) {
@@ -94,9 +94,9 @@ export class ClientService {
       );
     }
     
-    const result = await this.clientRepository.delete(id);
+    const result = await this.clientRepository.delete(referenceId);
     if (result.affected === 0) {
-      throw new NotFoundException(`Client with ID ${id} not found`);
+      throw new NotFoundException(`Client with reference ID ${referenceId} not found`);
     }
   }
 } 

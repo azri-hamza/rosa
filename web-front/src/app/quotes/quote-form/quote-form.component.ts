@@ -23,7 +23,7 @@ import { NzModalRef } from 'ng-zorro-antd/modal';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzDatePickerModule } from 'ng-zorro-antd/date-picker';
 import { ProductService, ClientService } from '@rosa/sales/data-access';
-import { Product, Quote, Client } from '@rosa/types';
+import { Product, Quote, Client, Response } from '@rosa/types';
 import { of, merge, Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap, startWith, map } from 'rxjs/operators';
 import { NzAutocompleteModule } from 'ng-zorro-antd/auto-complete';
@@ -226,8 +226,8 @@ export class QuoteFormComponent implements OnInit {
 
   private setupClientSearch() {
     // Load initial clients
-    this.clientService.searchClients('').subscribe(clients => {
-      this.clientOptions = clients;
+    this.clientService.searchClients('').subscribe(response => {
+      this.clientOptions = response.data;
     });
   }
 
@@ -236,8 +236,8 @@ export class QuoteFormComponent implements OnInit {
     
     this.clientSearchLoading = true;
     this.clientService.searchClients(term).subscribe({
-      next: (clients) => {
-        this.clientOptions = clients;
+      next: (response: Response<Client[]>) => {
+        this.clientOptions = response.data;
         this.clientSearchLoading = false;
       },
       error: () => {
@@ -359,7 +359,7 @@ export class QuoteFormComponent implements OnInit {
     console.log('product', product);
     console.log('itemForm', itemForm);
     itemForm.patchValue({
-      productId: product.productId,
+      productId: product.productId, // Use UUID productId
       productName: product.name,
     });
     // Trigger form validation

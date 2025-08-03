@@ -15,9 +15,8 @@ import { NzDatePickerModule } from 'ng-zorro-antd/date-picker';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
-import { ClientService } from '@rosa/sales/data-access';
-import { QuoteFilters } from '@rosa/sales/data-access';
-import { Client } from '@rosa/types';
+import { ClientService, QuoteFilters } from '@rosa/sales/data-access';
+import { Client, Response } from '@rosa/types';
 import { startOfWeek, endOfWeek } from 'date-fns';
 
 @Component({
@@ -33,88 +32,8 @@ import { startOfWeek, endOfWeek } from 'date-fns';
     NzIconModule,
     NzSpinModule,
   ],
-  template: `
-    <div class="quotes-filter">
-      <form nz-form [formGroup]="filterForm" layout="inline" class="filter-form">
-        <nz-form-item>
-          <nz-form-label>Client</nz-form-label>
-          <nz-form-control>
-            <nz-select
-              formControlName="clientId"
-              nzPlaceHolder="All clients"
-              nzAllowClear
-              nzShowSearch
-              nzServerSearch
-              [nzLoading]="clientsLoading"
-              (nzOnSearch)="onClientSearch($event)"
-              style="width: 200px;"
-            >
-              <nz-option
-                *ngFor="let client of clients"
-                [nzValue]="client.id"
-                [nzLabel]="client.name"
-              >
-                {{ client.name }}
-              </nz-option>
-            </nz-select>
-          </nz-form-control>
-        </nz-form-item>
-
-        <nz-form-item>
-          <nz-form-label>Date Range</nz-form-label>
-          <nz-form-control>
-            <nz-range-picker
-              formControlName="dateRange"
-              [nzFormat]="'yyyy-MM-dd'"
-              style="width: 250px;"
-            ></nz-range-picker>
-          </nz-form-control>
-        </nz-form-item>
-
-        <nz-form-item>
-          <nz-form-control>
-            <button
-              nz-button
-              nzType="primary"
-              (click)="applyFilters()"
-            >
-              <nz-icon nzType="search"></nz-icon>
-              Filter
-            </button>
-            <button
-              nz-button
-              style="margin-left: 8px;"
-              (click)="clearFilters()"
-            >
-              <nz-icon nzType="clear"></nz-icon>
-              Clear
-            </button>
-          </nz-form-control>
-        </nz-form-item>
-      </form>
-    </div>
-  `,
-  styles: [`
-    .quotes-filter {
-      background: #fafafa;
-      padding: 16px;
-      border-radius: 6px;
-      margin-bottom: 16px;
-    }
-
-    .filter-form {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-      align-items: end;
-    }
-
-    :host ::ng-deep {
-      .ant-form-item {
-        margin-bottom: 0;
-      }
-    }
-  `],
+    templateUrl: './quotes-filter.component.html',
+    styleUrls: ['./quotes-filter.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class QuotesFilterComponent implements OnInit {
@@ -172,8 +91,9 @@ export class QuotesFilterComponent implements OnInit {
   private loadClients(searchTerm: string) {
     this.clientsLoading = true;
     this.clientService.searchClients(searchTerm).subscribe({
-      next: (clients) => {
-        this.clients = clients;
+      next: (response: Response<Client[]>) => {
+        console.log('response search clients', response);
+        this.clients = response.data;
         this.clientsLoading = false;
       },
       error: (error) => {

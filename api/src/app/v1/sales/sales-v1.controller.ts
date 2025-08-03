@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Body, Inject, Param, UseGuards, Query, Request, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Inject, Param, UseGuards, Query, Request, Res, Delete, ParseUUIDPipe, Put } from '@nestjs/common';
 import { Response } from 'express';
 import { SalesService } from '../../sales/sales.service';
 import { Quote, QuoteFilterDto, DeliveryNote, DeliveryNoteFilterDto } from '@rosa/api-core';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { CreateDeliveryNoteDto } from '../../sales/dto/create-delivery-note.dto';
+import { UpdateDeliveryNoteDto } from '../../sales/dto/update-delivery-note.dto';
 import { PdfService } from '../../sales/pdf.service';
 
 @Controller({ path: 'sales', version: '1' })
@@ -49,7 +50,7 @@ export class SalesV1Controller {
   }
 
   @Post('delivery-notes')
-  async createDeliveryNote(@Body() createDeliveryNoteDto: CreateDeliveryNoteDto, @Request() req: any) {
+  async createDeliveryNote(@Body() createDeliveryNoteDto: CreateDeliveryNoteDto, @Request() req: Request & { user: { userId: string } }) {
     try {
       const deliveryNote = await this.salesService.createDeliveryNote(createDeliveryNoteDto, req.user.userId);
       return {
@@ -66,7 +67,7 @@ export class SalesV1Controller {
   }
 
   @Get('delivery-notes/:id')
-  async getDeliveryNoteById(@Param('id') id: string, @Request() req: any) {
+  async getDeliveryNoteById(@Param('id') id: string, @Request() req: Request & { user: { userId: string } }) {
     try {
       const deliveryNote = await this.salesService.getDeliveryNoteById(id, req.user.userId);
       return {
@@ -78,6 +79,37 @@ export class SalesV1Controller {
       };
     } catch (error) {
       console.error('Error fetching delivery note by id:', error);
+      throw error;
+    }
+  }
+
+  @Put('delivery-notes/:referenceId')
+  async updateDeliveryNote(
+    @Param('referenceId', ParseUUIDPipe) referenceId: string,
+    @Body() updateDeliveryNoteDto: UpdateDeliveryNoteDto,
+  ) { 
+    try {
+      const updatedDeliveryNote = await this.salesService.updateDeliveryNote(referenceId, updateDeliveryNoteDto);
+      return {
+        data: this.formatDeliveryNoteResponse(updatedDeliveryNote),
+        meta: {
+          version: '1.0',
+          timestamp: new Date().toISOString(),
+        }
+      };
+    } catch (error) {
+      console.error('Error updating delivery note:', error);
+      throw error;
+    }
+  }
+
+  @Delete('delivery-notes/:referenceId')
+  async deleteDeliveryNote(@Param('referenceId', ParseUUIDPipe) referenceId: string, @Request() req: Request & { user: { userId: string } }) {
+    try {
+      await this.salesService.deleteDeliveryNote(referenceId, req.user.userId);
+      return { message: 'Delivery note deleted successfully' };
+    } catch (error) {
+      console.error('Error in deleteDeliveryNote endpoint:', error);
       throw error;
     }
   }
@@ -135,7 +167,7 @@ export class SalesV1Controller {
     const deliveryNoteNumber = `${deliveryNote.year}-${deliveryNote.sequenceNumber.toString().padStart(4, '0')}`;
     const totalAmount = deliveryNote.items?.reduce((sum, item) => sum + item.totalPrice, 0) || 0;
     
-    return {
+    const response = {
       id: deliveryNote.id,
       deliveryNoteNumber: deliveryNoteNumber,
       referenceId: deliveryNote.referenceId,
@@ -165,7 +197,9 @@ export class SalesV1Controller {
           id: item.product.id,
           name: item.product.name,
           productCode: item.product.productCode,
+          productId: item.product.productId,
         } : null,
+        productId: item.product?.productId || null,
         quantity: item.quantity,
         deliveredQuantity: item.deliveredQuantity,
         unitPrice: item.unitPrice,
@@ -179,5 +213,7 @@ export class SalesV1Controller {
         grossTotalPrice: item.grossTotalPrice,
       })) || [],
     };
+    
+    return response;
   }
 } 

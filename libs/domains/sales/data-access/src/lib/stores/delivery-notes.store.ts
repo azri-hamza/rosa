@@ -94,6 +94,7 @@ export const DeliveryNotesStore = signalStore(
       return deliveryNoteService.updateDeliveryNote(deliveryNote.referenceId, deliveryNote).pipe(
         map(response => response.data),
         tap((updatedDeliveryNote) => {
+          console.log('updatedDeliveryNote', updatedDeliveryNote);
           const deliveryNotes = store.deliveryNotes().map(dn => 
             dn.referenceId === updatedDeliveryNote.referenceId ? updatedDeliveryNote : dn
           );

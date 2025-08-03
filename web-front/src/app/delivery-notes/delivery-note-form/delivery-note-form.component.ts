@@ -7,6 +7,7 @@ import {
   ElementRef,
   OnInit,
   OnDestroy,
+  ChangeDetectorRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -26,7 +27,7 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzDatePickerModule } from 'ng-zorro-antd/date-picker';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { ProductService, ClientService } from '@rosa/sales/data-access';
-import { Product, DeliveryNote, Client } from '@rosa/types';
+import { Product, DeliveryNote, Client, Response, DeliveryNoteItem } from '@rosa/types';
 import { of, merge, Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { NzAutocompleteModule } from 'ng-zorro-antd/auto-complete';
@@ -63,17 +64,18 @@ export class DeliveryNoteFormComponent implements OnInit, OnDestroy {
   private modal = inject(NzModalRef);
   private productService = inject(ProductService);
   private clientService = inject(ClientService);
+  private cdr = inject(ChangeDetectorRef); 
 
   deliveryNoteForm: FormGroup;
   clients: Client[] = [];
   isLoadingClients = false;
   isEditMode = false;
-  
+
   // Product autocomplete
   productOptions: Product[] = [];
   isLoadingProducts = false;
   productSearchSubject = new Subject<string>();
-  
+
   // Client search
   clientSearchSubject = new Subject<string>();
   nzFilterOption = () => false; // Disable client-side filtering since we use server search
@@ -97,105 +99,73 @@ export class DeliveryNoteFormComponent implements OnInit, OnDestroy {
     });
 
     // Setup product search
-    this.productSearchSubject.pipe(
-      debounceTime(300),
-      distinctUntilChanged(),
-      switchMap(term => {
-        if (!term) return of([]);
-        this.isLoadingProducts = true;
-        return this.productService.searchProducts(term);
-      })
-    ).subscribe(products => {
-      this.productOptions = products;
-      this.isLoadingProducts = false;
-    });
+    this.productSearchSubject
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        switchMap((term) => {
+          if (!term) return of([]);
+          this.isLoadingProducts = true;
+          return this.productService.searchProducts(term);
+        })
+      )
+      .subscribe((products) => {
+        this.productOptions = products;
+        this.isLoadingProducts = false;
+      });
 
     // Setup client search
-    this.clientSearchSubject.pipe(
-      debounceTime(300),
-      distinctUntilChanged(),
-      switchMap(term => {
-        if (!term || term.length < 2) return of([]);
-        this.isLoadingClients = true;
-        return this.clientService.searchClients(term);
-      })
-    ).subscribe(clients => {
-      this.clients = clients;
-      this.isLoadingClients = false;
-    });
+    this.clientSearchSubject
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        switchMap((term) => {
+          if (!term || term.length < 2)
+            return of({
+              data: [],
+              meta: { timestamp: new Date().toISOString(), version: '1.0' },
+            });
+          this.isLoadingClients = true;
+          return this.clientService.searchClients(term);
+        })
+      )
+      .subscribe((response) => {
+        this.clients = response.data;
+        this.isLoadingClients = false;
+      });
 
     // Setup global discount calculations
-    this.deliveryNoteForm.get('globalDiscountPercentage')!.valueChanges.subscribe(() => {
-      this.calculateGlobalDiscount();
-    });
+    this.deliveryNoteForm
+      .get('globalDiscountPercentage')!
+      .valueChanges.subscribe(() => {
+        this.calculateGlobalDiscount();
+      });
 
     // Subscribe to global discount amount changes to calculate percentage (frontend helper)
-    this.deliveryNoteForm.get('globalDiscountAmount')!.valueChanges.subscribe((globalDiscountAmount: number) => {
-      this.calculateGlobalDiscountPercentageFromAmount(globalDiscountAmount);
-    });
+    this.deliveryNoteForm
+      .get('globalDiscountAmount')!
+      .valueChanges.subscribe((globalDiscountAmount: number) => {
+        this.calculateGlobalDiscountPercentageFromAmount(globalDiscountAmount);
+      });
   }
 
   ngOnInit() {
     this.addItem(); // Add one item by default
 
     // If editing, load only the specific client then populate form
-    const deliveryNote = this.modal.getConfig().nzData?.deliveryNote as DeliveryNote;
+    const deliveryNote = this.modal.getConfig().nzData
+      ?.deliveryNote as DeliveryNote;
     if (deliveryNote) {
       this.isEditMode = true;
       this.loadClientAndPopulateForm(deliveryNote);
     }
-    // For new delivery notes, clients will be loaded on search
   }
 
   get items(): FormArray {
     return this.deliveryNoteForm.get('items') as FormArray;
   }
 
-
-
-  private loadClientAndPopulateForm(deliveryNote: DeliveryNote) {
-    if (!deliveryNote.clientId) {
-      // If no client ID, just populate the form without loading any client
-      this.populateForm(deliveryNote);
-      return;
-    }
-
-    this.isLoadingClients = true;
-    this.clientService.getClient(deliveryNote.clientId).subscribe({
-      next: (client) => {
-        // Set only the specific client needed for this delivery note
-        this.clients = [client];
-        this.isLoadingClients = false;
-        // Now that the client is loaded, populate the form
-        this.populateForm(deliveryNote);
-      },
-      error: (error) => {
-        console.error('Error loading client:', error);
-        this.isLoadingClients = false;
-        // Even if client fails to load, still populate the form
-        this.populateForm(deliveryNote);
-      }
-    });
-  }
-
-  private populateForm(deliveryNote: DeliveryNote) {
-    this.deliveryNoteForm.patchValue({
-      clientId: deliveryNote.clientId,
-      deliveryDate: new Date(deliveryNote.deliveryDate),
-      deliveryAddress: deliveryNote.deliveryAddress,
-      notes: deliveryNote.notes,
-      status: deliveryNote.status,
-      globalDiscountPercentage: deliveryNote.globalDiscountPercentage || 0,
-      globalDiscountAmount: deliveryNote.globalDiscountAmount || 0,
-    });
-
-    // Clear existing items and add delivery note items
-    this.items.clear();
-    deliveryNote.items.forEach(item => {
-      this.addItem(item);
-    });
-  }
-
+ 
   addItem(item?: any) {
     const itemForm = this.fb.group({
       id: [item?.id || null],
@@ -203,8 +173,14 @@ export class DeliveryNoteFormComponent implements OnInit, OnDestroy {
       description: [item?.description || ''],
       quantity: [item?.quantity || 0, [Validators.required, Validators.min(0)]],
       deliveredQuantity: [item?.deliveredQuantity || 0, [Validators.min(0)]],
-      unitPrice: [item?.unitPrice || 0, [Validators.required, Validators.min(0)]],
-      discountPercentage: [item?.discountPercentage || 0, [Validators.min(0), Validators.max(100)]],
+      unitPrice: [
+        item?.unitPrice || 0,
+        [Validators.required, Validators.min(0)],
+      ],
+      discountPercentage: [
+        item?.discountPercentage || 0,
+        [Validators.min(0), Validators.max(100)],
+      ],
       discountAmount: [item?.discountAmount || 0, [Validators.min(0)]],
       netUnitPrice: [item?.netUnitPrice || 0],
       grossUnitPrice: [item?.grossUnitPrice || 0],
@@ -221,93 +197,26 @@ export class DeliveryNoteFormComponent implements OnInit, OnDestroy {
       itemForm.get('unitPrice')!.valueChanges,
       itemForm.get('discountPercentage')!.valueChanges,
       itemForm.get('vatRate')!.valueChanges
-    ).pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(() => {
-      this.calculateItemPrices(itemForm);
-    });
+    )
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.calculateItemPrices(itemForm);
+      });
 
     // Subscribe to discount amount changes to calculate percentage (frontend helper)
-    itemForm.get('discountAmount')!.valueChanges.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe((discountAmount: number) => {
-      this.calculateDiscountPercentageFromAmount(itemForm, discountAmount);
-    });
+    itemForm
+      .get('discountAmount')!
+      .valueChanges.pipe(takeUntil(this.destroy$))
+      .subscribe((discountAmount: number) => {
+        this.calculateDiscountPercentageFromAmount(itemForm, discountAmount);
+      });
 
     this.items.push(itemForm);
-  }
-
-  private calculateItemPrices(itemForm: FormGroup): void {
-    const quantity = itemForm.get('quantity')?.value || 0;
-    const unitPrice = itemForm.get('unitPrice')?.value || 0;
-    const discountPercentage = itemForm.get('discountPercentage')?.value || 0;
-    const vatRate = itemForm.get('vatRate')?.value || 0;
-
-    // Calculate discount amount based solely on discount percentage
-    const finalDiscountAmount = Math.round(unitPrice * (discountPercentage / 100) * 1000) / 1000;
-
-    // Calculate net unit price (after discount)
-    const netUnitPrice = Math.round((unitPrice - finalDiscountAmount) * 1000) / 1000;
-    itemForm.get('netUnitPrice')?.setValue(netUnitPrice, { emitEvent: false });
-
-    // Calculate total price
-    const netTotal = quantity * netUnitPrice;
-    itemForm.get('totalPrice')?.setValue(netTotal, { emitEvent: false });
-
-    // Calculate VAT and gross prices
-    const grossUnitPrice = Math.round(netUnitPrice * (1 + vatRate / 100) * 1000) / 1000;
-    itemForm.get('grossUnitPrice')?.setValue(grossUnitPrice, { emitEvent: false });
-
-    const vatAmount = Math.round(netTotal * (vatRate / 100) * 1000) / 1000;
-    itemForm.get('vatAmount')?.setValue(vatAmount, { emitEvent: false });
-
-    const grossTotal = netTotal + vatAmount;
-    itemForm.get('grossTotalPrice')?.setValue(grossTotal, { emitEvent: false });
-
-    // Update discount amount (calculated from percentage)
-    itemForm.get('discountAmount')?.setValue(finalDiscountAmount, { emitEvent: false });
-  }
-
-  private calculateDiscountPercentageFromAmount(itemForm: FormGroup, discountAmount: number): void {
-    const unitPrice = itemForm.get('unitPrice')?.value || 0;
-    
-    if (discountAmount > 0 && unitPrice > 0) {
-      const calculatedPercentage = Math.round((discountAmount / unitPrice) * 100 * 100) / 100;
-      // Ensure percentage doesn't exceed 100%
-      const finalPercentage = Math.min(calculatedPercentage, 100);
-      itemForm.get('discountPercentage')?.setValue(finalPercentage, { emitEvent: false });
-      
-      // Recalculate prices based on the new percentage
-      this.calculateItemPrices(itemForm);
-    } else if (discountAmount === 0) {
-      itemForm.get('discountPercentage')?.setValue(0, { emitEvent: false });
-      this.calculateItemPrices(itemForm);
-    }
-  }
-
-  private calculateGlobalDiscount() {
-    const globalDiscountPercentage = this.deliveryNoteForm.get('globalDiscountPercentage')?.value || 0;
-    const netTotalBeforeGlobalDiscount = this.getNetTotal();
-
-    // Calculate discount amount based solely on discount percentage
-    const calculatedAmount = Math.round(netTotalBeforeGlobalDiscount * (globalDiscountPercentage / 100) * 1000) / 1000;
-    this.deliveryNoteForm.get('globalDiscountAmount')?.setValue(calculatedAmount, { emitEvent: false });
-  }
-
-  private calculateGlobalDiscountPercentageFromAmount(globalDiscountAmount: number): void {
-    const netTotalBeforeGlobalDiscount = this.getNetTotal();
-    
-    if (globalDiscountAmount > 0 && netTotalBeforeGlobalDiscount > 0) {
-      const calculatedPercentage = Math.round((globalDiscountAmount / netTotalBeforeGlobalDiscount) * 100 * 100) / 100;
-      // Ensure percentage doesn't exceed 100%
-      const finalPercentage = Math.min(calculatedPercentage, 100);
-      this.deliveryNoteForm.get('globalDiscountPercentage')?.setValue(finalPercentage, { emitEvent: false });
-      
-      // Recalculate global discount based on the new percentage
-      this.calculateGlobalDiscount();
-    } else if (globalDiscountAmount === 0) {
-      this.deliveryNoteForm.get('globalDiscountPercentage')?.setValue(0, { emitEvent: false });
-      this.calculateGlobalDiscount();
+  }  
+  
+  onClientDropdownOpenChange(event: boolean) {
+    if (event) {
+      this.loadClients('');
     }
   }
 
@@ -324,15 +233,15 @@ export class DeliveryNoteFormComponent implements OnInit, OnDestroy {
 
   onProductSelect(option: any, index: number) {
     const productName = option.nzValue;
-    const product = this.productOptions.find(p => p.name === productName);
+    const product = this.productOptions.find((p) => p.name === productName);
     if (product) {
       const itemForm = this.items.at(index);
       itemForm.patchValue({
         productName: product.name,
         description: product.description,
         unitPrice: product.netPrice || 0,
-        productId: product.productId,
-        vatRate: product.vatRate?.percentage || 0
+        productId: product.productId, // Use UUID productId
+        vatRate: product.vatRate?.percentage || 0,
       });
     }
   }
@@ -341,7 +250,7 @@ export class DeliveryNoteFormComponent implements OnInit, OnDestroy {
     const itemForm = this.items.at(index);
     const productId = itemForm.get('productId')?.value;
     if (productId) {
-      return this.productOptions.find(p => p.productId === productId);
+      return this.productOptions.find((p) => p.productId === productId);
     }
     return undefined;
   }
@@ -390,7 +299,9 @@ export class DeliveryNoteFormComponent implements OnInit, OnDestroy {
   getGrossTotal(): number {
     const netTotalAfterGlobalDiscount = this.getNetTotalAfterGlobalDiscount();
     const totalVatAmount = this.getTotalVatAmount();
-    return Math.round((netTotalAfterGlobalDiscount + totalVatAmount) * 1000) / 1000;
+    return (
+      Math.round((netTotalAfterGlobalDiscount + totalVatAmount) * 1000) / 1000
+    );
   }
 
   getTotalAmount(): number {
@@ -398,26 +309,29 @@ export class DeliveryNoteFormComponent implements OnInit, OnDestroy {
   }
 
   currencyFormatter = (value: number): string => `€ ${value}`;
-  currencyParser = (value: string): number => parseFloat(value.replace('€ ', '')) || 0;
+  currencyParser = (value: string): number =>
+    parseFloat(value.replace('€ ', '')) || 0;
 
   onSubmit() {
     if (this.deliveryNoteForm.valid) {
       const formValue = this.deliveryNoteForm.value;
-      
+
       // Format the delivery note data
       const deliveryNoteData = {
         ...formValue,
-        deliveryDate: formValue.deliveryDate?.toISOString?.() || formValue.deliveryDate,
+        deliveryDate:
+          formValue.deliveryDate?.toISOString?.() || formValue.deliveryDate,
         globalDiscountPercentage: Number(formValue.globalDiscountPercentage),
         globalDiscountAmount: Number(formValue.globalDiscountAmount),
         netTotalBeforeGlobalDiscount: this.getNetTotal(),
         netTotalAfterGlobalDiscount: this.getNetTotalAfterGlobalDiscount(),
-        items: formValue.items.map((item: any) => {
+        items: formValue.items.map((item: DeliveryNoteItem) => {
           // Destructure to exclude id, then build the object without it
           const { id, ...itemWithoutId } = item;
-          
+
           const processedItem: any = {
             ...itemWithoutId,
+            productId: item.productId,
             quantity: Number(item.quantity),
             deliveredQuantity: Number(item.deliveredQuantity),
             unitPrice: Number(item.unitPrice),
@@ -428,15 +342,23 @@ export class DeliveryNoteFormComponent implements OnInit, OnDestroy {
             totalPrice: Number(item.totalPrice),
             vatRate: Number(item.vatRate),
           };
-          
+
           // Only include id if it's a valid number (existing item)
-          if (id && id !== '' && id !== null && id !== undefined && 
-              ((typeof id === 'number' && id > 0) || 
-               (typeof id === 'string' && id.trim() !== '' && !isNaN(Number(id)) && Number(id) > 0))) {
+          if (
+            id &&
+            id !== '' &&
+            id !== null &&
+            id !== undefined &&
+            ((typeof id === 'number' && id > 0) ||
+              (typeof id === 'string' &&
+                id.trim() !== '' &&
+                !isNaN(Number(id)) &&
+                Number(id) > 0))
+          ) {
             processedItem.id = typeof id === 'string' ? Number(id) : id;
           }
           // For new items (empty string, null, undefined, or 0), don't include the id field at all
-          
+
           return processedItem;
         }),
       };
@@ -444,11 +366,11 @@ export class DeliveryNoteFormComponent implements OnInit, OnDestroy {
       this.modal.close(deliveryNoteData);
     } else {
       // Mark all fields as touched to show validation errors
-      Object.values(this.deliveryNoteForm.controls).forEach(control => {
+      Object.values(this.deliveryNoteForm.controls).forEach((control) => {
         if (control instanceof FormArray) {
-          control.controls.forEach(itemControl => {
+          control.controls.forEach((itemControl) => {
             if (itemControl instanceof FormGroup) {
-              Object.values(itemControl.controls).forEach(field => {
+              Object.values(itemControl.controls).forEach((field) => {
                 field.markAsTouched();
                 field.updateValueAndValidity();
               });
@@ -474,4 +396,175 @@ export class DeliveryNoteFormComponent implements OnInit, OnDestroy {
     this.destroy$.next();
     this.destroy$.complete();
   }
-} 
+
+  private loadClients(searchTerm = '') {
+    this.isLoadingClients = true;
+    this.clientService.searchClients(searchTerm).subscribe({
+      next: (response) => {
+        console.log('response on method loadClients', response);
+        this.clients = response.data;
+        this.isLoadingClients = false;
+        this.cdr.markForCheck();
+      },
+      error: (error) => {
+        console.error('Error loading clients:', error);
+        this.isLoadingClients = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  private loadClientAndPopulateForm(deliveryNote: DeliveryNote) {
+    if (!deliveryNote.client?.id) {
+      console.log(
+        'No client ID, just populate the form without loading any client'
+      );
+      // If no client ID, just populate the form without loading any client
+      this.populateForm(deliveryNote);
+      return;
+    }
+
+    this.isLoadingClients = true;
+    this.clientService
+      .getClientByReferenceId(deliveryNote.client?.referenceId)
+      .subscribe({
+        next: (response: Response<Client>) => {
+          console.log('Client loaded:', response);
+          // Set only the specific client needed for this delivery note
+          this.clients = [response.data];
+          this.isLoadingClients = false;
+          // Now that the client is loaded, populate the form
+          this.populateForm(deliveryNote);
+          this.cdr.markForCheck();
+        },
+        error: (error) => {
+          console.error('Error loading client:', error);
+          this.isLoadingClients = false;
+          // Even if client fails to load, still populate the form
+          this.populateForm(deliveryNote);
+          this.cdr.markForCheck();
+        },
+      });
+  }
+
+  private populateForm(deliveryNote: DeliveryNote) {
+    this.deliveryNoteForm.patchValue({
+      clientId: deliveryNote.client?.id,
+      deliveryDate: new Date(deliveryNote.deliveryDate),
+      deliveryAddress: deliveryNote.deliveryAddress,
+      notes: deliveryNote.notes,
+      status: deliveryNote.status,
+      globalDiscountPercentage: deliveryNote.globalDiscountPercentage || 0,
+      globalDiscountAmount: deliveryNote.globalDiscountAmount || 0,
+    });
+
+    // Clear existing items and add delivery note items
+    this.items.clear();
+    deliveryNote.items.forEach((item) => {
+      console.log('item on method populateForm', item);
+      this.addItem(item);
+    });
+  }
+
+  private calculateItemPrices(itemForm: FormGroup): void {
+    const quantity = itemForm.get('quantity')?.value || 0;
+    const unitPrice = itemForm.get('unitPrice')?.value || 0;
+    const discountPercentage = itemForm.get('discountPercentage')?.value || 0;
+    const vatRate = itemForm.get('vatRate')?.value || 0;
+
+    // Calculate discount amount based solely on discount percentage
+    const finalDiscountAmount =
+      Math.round(unitPrice * (discountPercentage / 100) * 1000) / 1000;
+
+    // Calculate net unit price (after discount)
+    const netUnitPrice =
+      Math.round((unitPrice - finalDiscountAmount) * 1000) / 1000;
+    itemForm.get('netUnitPrice')?.setValue(netUnitPrice, { emitEvent: false });
+
+    // Calculate total price
+    const netTotal = quantity * netUnitPrice;
+    itemForm.get('totalPrice')?.setValue(netTotal, { emitEvent: false });
+
+    // Calculate VAT and gross prices
+    const grossUnitPrice =
+      Math.round(netUnitPrice * (1 + vatRate / 100) * 1000) / 1000;
+    itemForm
+      .get('grossUnitPrice')
+      ?.setValue(grossUnitPrice, { emitEvent: false });
+
+    const vatAmount = Math.round(netTotal * (vatRate / 100) * 1000) / 1000;
+    itemForm.get('vatAmount')?.setValue(vatAmount, { emitEvent: false });
+
+    const grossTotal = netTotal + vatAmount;
+    itemForm.get('grossTotalPrice')?.setValue(grossTotal, { emitEvent: false });
+
+    // Update discount amount (calculated from percentage)
+    itemForm
+      .get('discountAmount')
+      ?.setValue(finalDiscountAmount, { emitEvent: false });
+  }
+
+  private calculateDiscountPercentageFromAmount(
+    itemForm: FormGroup,
+    discountAmount: number
+  ): void {
+    const unitPrice = itemForm.get('unitPrice')?.value || 0;
+
+    if (discountAmount > 0 && unitPrice > 0) {
+      const calculatedPercentage =
+        Math.round((discountAmount / unitPrice) * 100 * 100) / 100;
+      // Ensure percentage doesn't exceed 100%
+      const finalPercentage = Math.min(calculatedPercentage, 100);
+      itemForm
+        .get('discountPercentage')
+        ?.setValue(finalPercentage, { emitEvent: false });
+
+      // Recalculate prices based on the new percentage
+      this.calculateItemPrices(itemForm);
+    } else if (discountAmount === 0) {
+      itemForm.get('discountPercentage')?.setValue(0, { emitEvent: false });
+      this.calculateItemPrices(itemForm);
+    }
+  }
+
+  private calculateGlobalDiscount() {
+    const globalDiscountPercentage =
+      this.deliveryNoteForm.get('globalDiscountPercentage')?.value || 0;
+    const netTotalBeforeGlobalDiscount = this.getNetTotal();
+
+    // Calculate discount amount based solely on discount percentage
+    const calculatedAmount =
+      Math.round(
+        netTotalBeforeGlobalDiscount * (globalDiscountPercentage / 100) * 1000
+      ) / 1000;
+    this.deliveryNoteForm
+      .get('globalDiscountAmount')
+      ?.setValue(calculatedAmount, { emitEvent: false });
+  }
+
+  private calculateGlobalDiscountPercentageFromAmount(
+    globalDiscountAmount: number
+  ): void {
+    const netTotalBeforeGlobalDiscount = this.getNetTotal();
+
+    if (globalDiscountAmount > 0 && netTotalBeforeGlobalDiscount > 0) {
+      const calculatedPercentage =
+        Math.round(
+          (globalDiscountAmount / netTotalBeforeGlobalDiscount) * 100 * 100
+        ) / 100;
+      // Ensure percentage doesn't exceed 100%
+      const finalPercentage = Math.min(calculatedPercentage, 100);
+      this.deliveryNoteForm
+        .get('globalDiscountPercentage')
+        ?.setValue(finalPercentage, { emitEvent: false });
+
+      // Recalculate global discount based on the new percentage
+      this.calculateGlobalDiscount();
+    } else if (globalDiscountAmount === 0) {
+      this.deliveryNoteForm
+        .get('globalDiscountPercentage')
+        ?.setValue(0, { emitEvent: false });
+      this.calculateGlobalDiscount();
+    }
+  }
+}

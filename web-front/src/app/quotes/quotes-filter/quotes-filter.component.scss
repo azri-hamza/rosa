@@ -1,0 +1,19 @@
+.quotes-filter {
+    background: #fafafa;
+    padding: 16px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+  }
+
+  .filter-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: end;
+  }
+
+  :host ::ng-deep {
+    .ant-form-item {
+      margin-bottom: 0;
+    }
+  }

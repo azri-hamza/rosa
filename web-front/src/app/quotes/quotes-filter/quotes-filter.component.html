@@ -1,0 +1,59 @@
+<div class="quotes-filter">
+    <form nz-form [formGroup]="filterForm" layout="inline" class="filter-form">
+      <nz-form-item>
+        <nz-form-label>Client</nz-form-label>
+        <nz-form-control>
+          <nz-select
+            formControlName="clientId"
+            nzPlaceHolder="All clients"
+            nzAllowClear
+            nzShowSearch
+            nzServerSearch
+            [nzLoading]="clientsLoading"
+            (nzOnSearch)="onClientSearch($event)"
+            style="width: 200px;"
+          >
+            <nz-option
+              *ngFor="let client of clients"
+              [nzValue]="client.id"
+              [nzLabel]="client.name"
+            >
+              {{ client.name }}
+            </nz-option>
+          </nz-select>
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item>
+        <nz-form-label>Date Range</nz-form-label>
+        <nz-form-control>
+          <nz-range-picker
+            formControlName="dateRange"
+            [nzFormat]="'yyyy-MM-dd'"
+            style="width: 250px;"
+          ></nz-range-picker>
+        </nz-form-control>
+      </nz-form-item>
+
+      <nz-form-item>
+        <nz-form-control>
+          <button
+            nz-button
+            nzType="primary"
+            (click)="applyFilters()"
+          >
+            <nz-icon nzType="search"></nz-icon>
+            Filter
+          </button>
+          <button
+            nz-button
+            style="margin-left: 8px;"
+            (click)="clearFilters()"
+          >
+            <nz-icon nzType="clear"></nz-icon>
+            Clear
+          </button>
+        </nz-form-control>
+      </nz-form-item>
+    </form>
+  </div>

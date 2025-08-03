@@ -22,6 +22,7 @@ import { ClientService } from '../client/client.service';
 import { CreateQuoteItemDto } from './dto/create-quote-item.dto';
 import { CreateQuoteDto } from './dto/create-quote.dto';
 import { CreateDeliveryNoteDto } from './dto/create-delivery-note.dto';
+import { UpdateDeliveryNoteDto } from './dto/update-delivery-note.dto';
 
 @Injectable()
 export class SalesService {
@@ -401,6 +402,8 @@ export class SalesService {
         .orderBy('deliveryNote.createdAt', 'DESC')
         .getMany();
 
+      console.log('deliveryNotes items on getAllDeliveryNotes', deliveryNotes[0].items);
+
       return deliveryNotes || [];
     } catch (error) {
       console.error('Error in getAllDeliveryNotes:', error);
@@ -433,10 +436,9 @@ export class SalesService {
       items.map(async (item) => {
         let product = null;
         if (item.productId && item.productId.trim() !== '') {
-          const productId = parseInt(item.productId);
-          if (!isNaN(productId)) {
-            product = await this.productRepository.findOne({ where: { id: productId } });
-          }
+          // Use the UUID productId directly instead of parsing as integer
+          product = await this.productRepository.findByProductId(item.productId);
+          console.log('product on createDeliveryNote', product);
         }
 
         // Calculate prices
@@ -477,34 +479,45 @@ export class SalesService {
     return savedDeliveryNote;
   }
 
-  async updateDeliveryNote(referenceId: string, dto: CreateDeliveryNoteDto): Promise<DeliveryNote> {
-    const { items = [], ...deliveryNoteData } = dto;
+  async updateDeliveryNote(referenceId: string, dto: UpdateDeliveryNoteDto): Promise<DeliveryNote> {
+    const { items = [], clientId, ...deliveryNoteData } = dto;
+    console.log('deliveryNoteData', deliveryNoteData);
 
     console.log('updateDeliveryNote - items received:', JSON.stringify(items, null, 2));
 
-    // Update delivery note
-    const deliveryNote = await this.deliveryNoteRepository.findOne({ 
-      where: { referenceId },
-      relations: ['items']
-    });
+    // Find the delivery note with all its relationships
+    const deliveryNote = await this.deliveryNoteRepository
+      .createQueryBuilder('deliveryNote')
+      .leftJoinAndSelect('deliveryNote.items', 'items')
+      .leftJoinAndSelect('deliveryNote.client', 'client')
+      .leftJoinAndSelect('deliveryNote.createdByUser', 'createdByUser')
+      .where('deliveryNote.referenceId = :referenceId', { referenceId })
+      .getOne();
 
     if (!deliveryNote) {
       throw new NotFoundException(`Delivery note with reference ID "${referenceId}" not found`);
     }
 
+    // If clientId is provided, fetch the client
+    if (clientId) {
+      try {
+        const client = await this.clientService.findOne(clientId);
+        deliveryNote.client = client;
+      } catch (error) {
+        throw new BadRequestException(`Client with ID ${clientId} not found`);
+      }
+    }
+
     // Update delivery note data
     Object.assign(deliveryNote, deliveryNoteData);
+    console.log('deliveryNote to be saved', deliveryNote);
     const savedDeliveryNote = await this.deliveryNoteRepository.save(deliveryNote);
 
     // Delete removed items
-    const existingItemIds = deliveryNote.items.map(item => item.id);
+    const existingItemIds = deliveryNote.items?.map(item => item.id) || [];
     const updatedItemIds = items
       .map(item => item.id)
-      .filter(id => id !== undefined && id !== null)
-      .map(id => {
-        console.log(`Item ID: ${id}`);
-        return id;
-      });
+      .filter(id => id !== undefined && id !== null);
     const removedItemIds = existingItemIds.filter(id => !updatedItemIds.includes(id));
 
     if (removedItemIds.length > 0) {
@@ -516,11 +529,9 @@ export class SalesService {
       items.map(async (item) => {
         let product = null;
         if (item.productId && item.productId.trim() !== '') {
-          const productId = parseInt(item.productId);
-          console.log(`Parsing product ID: "${item.productId}" -> ${productId}`);
-          if (!isNaN(productId)) {
-            product = await this.productRepository.findOne({ where: { id: productId } });
-          }
+          // Use the UUID productId directly instead of parsing as integer
+          product = await this.productRepository.findByProductId(item.productId);
+          console.log('product on updateDeliveryNote', product);
         }
 
         // Calculate prices
@@ -537,7 +548,10 @@ export class SalesService {
         });
 
         if (item.id && item.id > 0) {
-          const existingItem = await this.deliveryNoteItemRepository.findOne({ where: { id: item.id } });
+          const existingItem = await this.deliveryNoteItemRepository.findOne({ 
+            where: { id: item.id },
+            relations: ['deliveryNote']
+          });
           if (existingItem) {
             Object.assign(existingItem, {
               productName: item.productName,
@@ -553,7 +567,8 @@ export class SalesService {
               vatRate: item.vatRate ? Number(item.vatRate) / 100 : undefined,
               vatAmount: calculations.vatAmount,
               grossTotalPrice: calculations.grossTotalPrice,
-              product: product
+              product: product,
+              deliveryNote: savedDeliveryNote
             });
             return existingItem;
           }
@@ -564,7 +579,7 @@ export class SalesService {
           description: item.description || '',
           quantity: item.quantity,
           deliveredQuantity: item.deliveredQuantity || 0,
-          unitPrice: item.unitPrice, // Using netUnitPrice from DTO until DTO changes are propagated
+          unitPrice: item.unitPrice,
           discountPercentage: calculations.discountPercentage,
           discountAmount: calculations.discountAmount,
           netUnitPrice: calculations.netUnitPrice,
@@ -583,7 +598,20 @@ export class SalesService {
     const savedItems = await this.deliveryNoteItemRepository.save(itemEntities);
     savedDeliveryNote.items = savedItems;
 
-    return savedDeliveryNote;
+    // Fetch and return the complete updated delivery note with all relations
+    const updatedDeliveryNote = await this.deliveryNoteRepository
+      .createQueryBuilder('deliveryNote')
+      .leftJoinAndSelect('deliveryNote.items', 'items')
+      .leftJoinAndSelect('deliveryNote.client', 'client')
+      .leftJoinAndSelect('deliveryNote.createdByUser', 'createdByUser')
+      .where('deliveryNote.id = :id', { id: savedDeliveryNote.id })
+      .getOne();
+
+    if (!updatedDeliveryNote) {
+      throw new NotFoundException(`Failed to fetch updated delivery note with ID ${savedDeliveryNote.id}`);
+    }
+
+    return updatedDeliveryNote;
   }
 
   async deleteDeliveryNote(deliveryNoteUuid: string, userId: string): Promise<void> {
