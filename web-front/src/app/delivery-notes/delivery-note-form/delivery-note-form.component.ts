@@ -27,7 +27,7 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzDatePickerModule } from 'ng-zorro-antd/date-picker';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { ProductService, ClientService } from '@rosa/sales/data-access';
-import { Product, DeliveryNote, Client, Response, DeliveryNoteItem } from '@rosa/types';
+import { Product, DeliveryNote, Client, ApiResponse, DeliveryNoteItem } from '@rosa/types';
 import { of, merge, Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { NzAutocompleteModule } from 'ng-zorro-antd/auto-complete';
@@ -559,7 +559,7 @@ export class DeliveryNoteFormComponent implements OnInit, OnDestroy {
     this.clientService
       .getClientByReferenceId(deliveryNote.client?.referenceId)
       .subscribe({
-        next: (response: Response<Client>) => {
+        next: (response: ApiResponse<Client>) => {
           console.log('Client loaded:', response);
           // Set only the specific client needed for this delivery note
           this.clients = [response.data];

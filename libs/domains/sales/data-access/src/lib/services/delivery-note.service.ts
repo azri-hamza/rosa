@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { ApiClient } from '@rosa/api-client';
-import { DeliveryNote, Response } from '@rosa/types';
+import { DeliveryNote, ApiResponse } from '@rosa/types';
 import { Observable } from 'rxjs';
 
 export interface DeliveryNoteFilters {
@@ -16,7 +16,7 @@ export interface DeliveryNoteFilters {
 export class DeliveryNoteService {
   private apiClient = inject(ApiClient);
 
-  getDeliveryNotes(filters?: DeliveryNoteFilters): Observable<Response<DeliveryNote[]>> {
+  getDeliveryNotes(filters?: DeliveryNoteFilters): Observable<ApiResponse<DeliveryNote[]>> {
     const params = new URLSearchParams();
     
     if (filters?.clientId) {
@@ -38,15 +38,15 @@ export class DeliveryNoteService {
     return this.apiClient.get(url);
   }
 
-  getDeliveryNote(id: string): Observable<Response<DeliveryNote>> {
+  getDeliveryNote(id: string): Observable<ApiResponse<DeliveryNote>> {
     return this.apiClient.get(`sales/delivery-notes/${id}`);
   }
 
-  createDeliveryNote(deliveryNote: Partial<DeliveryNote>): Observable<Response<DeliveryNote>> {
+  createDeliveryNote(deliveryNote: Partial<DeliveryNote>): Observable<ApiResponse<DeliveryNote>> {
     return this.apiClient.post('sales/delivery-notes', deliveryNote);
   }
 
-  updateDeliveryNote(id: string, deliveryNote: Partial<DeliveryNote>): Observable<Response<DeliveryNote>> {
+  updateDeliveryNote(id: string, deliveryNote: Partial<DeliveryNote>): Observable<ApiResponse<DeliveryNote>> {
     return this.apiClient.put(`sales/delivery-notes/${id}`, deliveryNote);
   }
 

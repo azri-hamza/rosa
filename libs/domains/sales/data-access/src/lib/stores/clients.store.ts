@@ -5,7 +5,7 @@ import {
   withMethods,
   withState,
 } from '@ngrx/signals';
-import { Client, CreateClientRequest, UpdateClientRequest, Response } from '@rosa/types';
+import { Client, CreateClientRequest, UpdateClientRequest, ApiResponse } from '@rosa/types';
 import { ClientService } from '../services/client.service';
 import { inject } from '@angular/core';
 import { Observable, tap, catchError, throwError } from 'rxjs';
@@ -71,7 +71,7 @@ export const ClientsStore = signalStore(
       patchState(store, { loading: true, loadingError: null });
       
       clientService.getClientByReferenceId(referenceId).subscribe({
-        next: (response: Response<Client>) => {
+        next: (response: ApiResponse<Client>) => {
           patchState(store, {
             selectedClient: response.data,
             loading: false,
@@ -111,7 +111,7 @@ export const ClientsStore = signalStore(
       this.loadClients(1);
     },
 
-    createClient(client: CreateClientRequest): Observable<Response<Client>> {
+    createClient(client: CreateClientRequest): Observable<ApiResponse<Client>> {
       patchState(store, { loading: true, operationError: null });
       
       return clientService.createClient(client).pipe(
@@ -131,7 +131,7 @@ export const ClientsStore = signalStore(
       );
     },
 
-    updateClient(id: number, client: UpdateClientRequest): Observable<Response<Client>> {
+    updateClient(id: number, client: UpdateClientRequest): Observable<ApiResponse<Client>> {
       patchState(store, { loading: true, operationError: null });
       
       return clientService.updateClient(id, client).pipe(

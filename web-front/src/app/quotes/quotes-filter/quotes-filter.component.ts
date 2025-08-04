@@ -16,7 +16,7 @@ import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { ClientService, QuoteFilters } from '@rosa/sales/data-access';
-import { Client, Response } from '@rosa/types';
+import { Client, ApiResponse } from '@rosa/types';
 import { startOfWeek, endOfWeek } from 'date-fns';
 
 @Component({
@@ -91,7 +91,7 @@ export class QuotesFilterComponent implements OnInit {
   private loadClients(searchTerm: string) {
     this.clientsLoading = true;
     this.clientService.searchClients(searchTerm).subscribe({
-      next: (response: Response<Client[]>) => {
+      next: (response: ApiResponse<Client[]>) => {
         console.log('response search clients', response);
         this.clients = response.data;
         this.clientsLoading = false;

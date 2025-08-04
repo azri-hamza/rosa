@@ -25,7 +25,7 @@ export interface ErrorDetail {
  * @template T The type of data being returned
  * @template M Additional metadata type (extends object)
  */
-export interface Response<T, M extends object = Record<string, never>> {
+export interface ApiResponse<T, M extends object = Record<string, never>> {
   // Main response data
   data: T;
   
@@ -47,7 +47,7 @@ export interface Response<T, M extends object = Record<string, never>> {
  * Type guard to check if a response contains pagination metadata
  */
 export function isPaginatedResponse<T, M extends object>(
-  response: Response<T, M>
-): response is Response<T, M> & { pagination: PaginationMeta } {
+  response: ApiResponse<T, M>
+): response is ApiResponse<T, M> & { pagination: PaginationMeta } {
   return response.pagination !== undefined;
 }

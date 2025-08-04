@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseIntPipe, UseGuards, Inject, ParseUUIDPipe } from '@nestjs/common';
 import { Client, CreateClientDto, UpdateClientDto, PaginationDto } from '@rosa/api-core';
-import { Response, ResponseMeta } from '@rosa/types';
+import { ApiResponse, ResponseMeta } from '@rosa/types';
 import { ClientService } from '../../client/client.service';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 
@@ -25,7 +25,7 @@ export class ClientV1Controller {
   }
 
   @Get('search')
-  async search(@Query('q') query: string): Promise<Response<Client[], ResponseMeta>> {
+  async search(@Query('q') query: string): Promise<ApiResponse<Client[], ResponseMeta>> {
     const clients = await this.clientService.search(query || '');
     return {
       data: clients,
@@ -100,7 +100,7 @@ export class ClientV1Controller {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateClientDto: UpdateClientDto,
-  ): Promise<Response<Client, ResponseMeta>> {
+  ): Promise<ApiResponse<Client, ResponseMeta>> {
     const client = await this.clientService.update(id, updateClientDto);
     return {
       data: client, 
