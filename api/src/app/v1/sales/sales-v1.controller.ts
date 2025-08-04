@@ -166,6 +166,7 @@ export class SalesV1Controller {
   private formatDeliveryNoteResponse(deliveryNote: DeliveryNote) {
     const deliveryNoteNumber = `${deliveryNote.year}-${deliveryNote.sequenceNumber.toString().padStart(4, '0')}`;
     const totalAmount = deliveryNote.items?.reduce((sum, item) => sum + item.totalPrice, 0) || 0;
+    const itemCount = deliveryNote.items?.length || 0;
     
     const response = {
       id: deliveryNote.id,
@@ -177,8 +178,10 @@ export class SalesV1Controller {
         id: deliveryNote.client.id,
         name: deliveryNote.client.name,
         referenceId: deliveryNote.client.referenceId,
+        taxIdentificationNumber: deliveryNote.client.taxIdentificationNumber,
       } : null,
       totalAmount: totalAmount,
+      itemCount: itemCount,
       status: deliveryNote.status,
       deliveryDate: deliveryNote.deliveryDate,
       deliveryAddress: deliveryNote.deliveryAddress,

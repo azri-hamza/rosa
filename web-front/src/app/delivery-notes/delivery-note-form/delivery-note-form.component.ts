@@ -294,6 +294,9 @@ export class DeliveryNoteFormComponent implements OnInit, OnDestroy {
       });
 
     this.items.push(itemForm);
+    
+    // Trigger change detection to ensure UI updates
+    this.cdr.markForCheck();
   }
 
   private updateItemAtIndex(index: number, itemData: ProductItemData) {
@@ -314,6 +317,9 @@ export class DeliveryNoteFormComponent implements OnInit, OnDestroy {
       grossTotalPrice: itemData.grossTotalPrice,
       productId: itemData.productId,
     });
+    
+    // Trigger change detection to ensure UI updates
+    this.cdr.markForCheck();
   }
 
   editItem(index: number) {
