@@ -18,6 +18,8 @@
     "module": "es2022",
     "lib": ["es2022", "dom"],
     "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
     "importHelpers": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,

@@ -9,13 +9,13 @@
   "exclude": ["jest.config.ts", "src/**/*.test.ts", "src/**/*.spec.ts"],
   "references": [
     {
-      "path": "../libs/domains/sales/data-access"
+      "path": "../libs/domains/sales/data-access/tsconfig.lib.json"
     },
     {
-      "path": "../libs/shared/types"
+      "path": "../libs/shared/types/tsconfig.lib.json"
     },
     {
-      "path": "../libs/shared/api-client"
+      "path": "../libs/shared/api-client/tsconfig.lib.json"
     }
   ]
 }
